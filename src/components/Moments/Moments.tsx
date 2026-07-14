@@ -38,7 +38,7 @@ export function Moments() {
               style={{ width: moment.width }}
             >
               <img
-                src={`https://picsum.photos/seed/${moment.img}/${moment.width}/650`}
+                src={moment.img}
                 alt={moment.caption}
                 loading="lazy"
                 className="h-full w-full object-cover brightness-[0.6] contrast-110 saturate-[0.8] transition-transform duration-700 group-hover:scale-105"

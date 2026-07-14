@@ -1,17 +1,43 @@
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { CheckCircle2 } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
+import { supabase } from '@/lib/supabase'
 
 const partySizes = ['1', '2', '3', '4', '5', '6', '7+']
 const times = ['6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM']
 
 export default function Reservations() {
   const [submitted, setSubmitted] = useState(false)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
+    setError(null)
+    setLoading(true)
+
+    const formData = new FormData(e.currentTarget)
+
+    const { error: insertError } = await supabase.from('reservations').insert({
+      full_name: formData.get('fullName') as string,
+      email: formData.get('email') as string,
+      phone: formData.get('phone') as string,
+      reservation_date: formData.get('date') as string,
+      party_size: formData.get('partySize') as string,
+      preferred_time: formData.get('time') as string,
+      special_requests: (formData.get('specialRequests') as string) || null,
+    })
+
+    setLoading(false)
+
+    if (insertError) {
+      setError('Something went wrong. Please try again.')
+      return
+    }
+
     setSubmitted(true)
   }
 
@@ -45,18 +71,25 @@ export default function Reservations() {
           </motion.div>
         ) : (
           <motion.form
+            ref={formRef}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             onSubmit={handleSubmit}
             className="space-y-6 rounded-sm border border-SilentKrowd-border bg-SilentKrowd-glass p-8 md:p-12"
           >
+            {error && (
+              <p className="rounded-sm border border-red-500/30 bg-red-500/10 p-3 text-center text-sm text-red-400">
+                {error}
+              </p>
+            )}
+
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <Field label="Full name" type="text" required />
-              <Field label="Email" type="email" required />
+              <Field label="Full name" name="fullName" type="text" required />
+              <Field label="Email" name="email" type="email" required />
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <Field label="Phone" type="tel" required />
-              <Field label="Date" type="date" required />
+              <Field label="Phone" name="phone" type="tel" required />
+              <Field label="Date" name="date" type="date" required />
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div>
@@ -85,13 +118,14 @@ export default function Reservations() {
                 Special requests
               </label>
               <textarea
+                name="specialRequests"
                 rows={4}
                 placeholder="Anniversary, dietary needs, seating preference..."
                 className="w-full resize-none rounded-sm border border-SilentKrowd-border bg-SilentKrowd-black/40 p-4 text-sm font-light text-SilentKrowd-white placeholder-SilentKrowd-muted/60 transition-colors focus:border-SilentKrowd-gold/30 focus:outline-none"
               />
             </div>
-            <Button variant="filled" type="submit" className="w-full justify-center">
-              Confirm Reservation
+            <Button variant="filled" type="submit" disabled={loading} className="w-full justify-center">
+              {loading ? 'Submitting...' : 'Confirm Reservation'}
             </Button>
           </motion.form>
         )}
@@ -100,12 +134,13 @@ export default function Reservations() {
   )
 }
 
-function Field({ label, type, required }: { label: string; type: string; required?: boolean }) {
+function Field({ label, name, type, required }: { label: string; name: string; type: string; required?: boolean }) {
   return (
     <div>
       <label className="mb-2 block text-[0.65rem] uppercase tracking-[0.15em] text-SilentKrowd-muted">{label}</label>
       <input
         type={type}
+        name={name}
         required={required}
         className="w-full rounded-sm border border-SilentKrowd-border bg-SilentKrowd-black/40 p-4 text-sm font-light text-SilentKrowd-white transition-colors focus:border-SilentKrowd-gold/30 focus:outline-none"
       />

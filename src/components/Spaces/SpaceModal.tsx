@@ -9,7 +9,7 @@ export function SpaceModal({ space, onClose }: { space: Space | null; onClose: (
         <div className="overflow-hidden rounded-sm">
           <div className="relative h-[300px] md:h-[450px]">
             <img
-              src={`https://picsum.photos/seed/${space.img}/1200/600`}
+              src={space.img}
               alt={space.title}
               className="h-full w-full object-cover brightness-50 contrast-110"
             />

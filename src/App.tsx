@@ -23,6 +23,8 @@ const AdminCustomers = lazy(() => import('@/pages/admin/Customers'))
 const AdminStaff = lazy(() => import('@/pages/admin/Staff'))
 const AdminCoupons = lazy(() => import('@/pages/admin/Coupons'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
+const AdminReservations = lazy(() => import('@/pages/admin/Reservations'))
+const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
 
 function PageTransition({ children }: { children: React.ReactNode }) {
   return (
@@ -78,6 +80,22 @@ function AnimatedRoutes() {
             element={
               <PageTransition>
                 <AdminCustomers />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/admin/reservations"
+            element={
+              <PageTransition>
+                <AdminReservations />
+              </PageTransition>
+            }
+          />
+          <Route
+            path="/admin/messages"
+            element={
+              <PageTransition>
+                <AdminMessages />
               </PageTransition>
             }
           />

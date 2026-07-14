@@ -157,3 +157,29 @@ export interface TrackedOrder {
     line_total: number
   }>
 }
+
+export type ReservationStatus = 'pending' | 'confirmed' | 'cancelled'
+
+export interface Reservation {
+  id: string
+  full_name: string
+  email: string
+  phone: string
+  reservation_date: string
+  party_size: string
+  preferred_time: string
+  special_requests: string | null
+  status: ReservationStatus
+  created_at: string
+  updated_at: string
+}
+
+export interface ContactMessage {
+  id: string
+  full_name: string
+  email: string
+  subject: string
+  message: string
+  read: boolean
+  created_at: string
+}

@@ -40,7 +40,7 @@ export function Cocktails() {
               }`}
             >
               <img
-                src={`https://picsum.photos/seed/${cocktail.img}/800/1000`}
+                src={cocktail.img}
                 alt={cocktail.name}
                 draggable={false}
                 loading="lazy"

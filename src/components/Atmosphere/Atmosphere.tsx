@@ -1,9 +1,14 @@
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/Container'
 import { ImageReveal } from '@/components/ui/ImageReveal'
-import Outdoor from '../../assets/home/outdoor.jpeg'
-import Cocktail from '../../assets/home/cocktail2.jpeg'
-import destination3 from '../../assets/home/destination3.jpeg'
+import Outdoor from '../../assets/home/outdoor.jpg'
+import Cocktail from '../../assets/home/cocktail2.jpg'
+import destination3 from '../../assets/home/destination3.jpg'
+import collageBig from '../../assets/home/IMG_3095.jpg'
+import collage2 from '../../assets/home/IMG_3087.jpg'
+import collage3 from '../../assets/home/IMG_3083.jpg'
+import collage4 from '../../assets/home/IMG_3082.jpg'
+import collage5 from '../../assets/home/IMG_0823.JPG.jpg'
 const panels = [
   {
     eyebrow: '01 — Atmosphere',
@@ -26,11 +31,11 @@ const panels = [
 ]
 
 const collage = [
-  { img: 'https://images.unsplash.com/photo-1590846406792-0adc7f938f1d?w=900&q=70', big: true },
-  { img: 'https://images.unsplash.com/photo-1470337458703-46ad1756a187?w=500&q=70' },
-  { img: 'https://images.unsplash.com/photo-1546171753-97d7676e4602?w=500&q=70' },
-  { img: 'https://images.unsplash.com/photo-1551024601-bec78aea704b?w=500&q=70' },
-  { img: 'https://images.unsplash.com/photo-1543007630-9710e4a00a20?w=500&q=70' },
+  { img: collageBig, big: true },
+  { img: collage2 },
+  { img: collage3 },
+  { img: collage4 },
+  { img: collage5 },
 ]
 
 export function Atmosphere() {

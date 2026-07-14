@@ -13,52 +13,57 @@ import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
+import galleryImg1 from '@/assets/home/outdoor.jpg'
+import galleryImg2 from '@/assets/home/IMG_3095.jpg'
+import galleryImg3 from '@/assets/home/IMG_3087.jpg'
+import galleryImg4 from '@/assets/home/IMG_3083.jpg'
+import galleryImg5 from '@/assets/home/IMG_3082.jpg'
+import galleryImg6 from '@/assets/home/IMG_0823.JPG.jpg'
+import galleryImg7 from '@/assets/home/IMG_0818.JPG.jpg'
+import galleryImg8 from '@/assets/home/IMG_0814.JPG.jpg'
+import galleryImg9 from '@/assets/home/IMG_0813.JPG.jpg'
+import galleryImg10 from '@/assets/home/IMG_0812.JPG.jpg'
+import galleryImg11 from '@/assets/home/IMG_0811.JPG.jpg'
+import galleryImg12 from '@/assets/home/IMG_0810.JPG.jpg'
+import galleryImg13 from '@/assets/home/IMG_0809.JPG.jpg'
+import galleryImg14 from '@/assets/home/IMG_0807.JPG.jpg'
+import galleryImg15 from '@/assets/home/IMG_0804.JPG.jpg'
+import galleryImg16 from '@/assets/home/IMG_0803.JPG.jpg'
+import featuredImg from '@/assets/home/cocktail.jpg'
+
 type GalleryImage = {
   id: number
-  img: string
+  src: string
   caption: string
 }
 
 const galleryImages: GalleryImage[] = [
-  { id: 1, img: 'pool-cabana.jpg', caption: 'The Pool Cabana' },
-  { id: 2, img: 'crispy-bites.jpg', caption: 'Crispy Bites' },
-  { id: 3, img: 'poolside-gathering.jpg', caption: 'Poolside Gathering' },
-  { id: 4, img: 'chefs-fried-rice.jpg', caption: "Chef's Fried Rice" },
-  { id: 5, img: 'team-SilentKrowd.jpg', caption: 'Team SilentKrowd' },
-  { id: 6, img: 'evening-ambience.jpg', caption: 'Evening Ambience' },
-  { id: 7, img: 'the-terrace.jpg', caption: 'The Terrace' },
-  { id: 8, img: 'sunset-session.jpg', caption: 'Sunset Session' },
-  { id: 9, img: 'signature-plate.jpg', caption: 'Signature Plate' },
-  { id: 10, img: 'private-cabana.jpg', caption: 'Private Cabana' },
-  { id: 11, img: 'guest-moment.jpg', caption: 'Guest Moment' },
-  { id: 12, img: 'the-lounge.jpg', caption: 'The Lounge' },
-  { id: 13, img: 'poolside-evening.jpg', caption: 'Poolside Evening' },
-  { id: 14, img: 'the-bar.jpg', caption: 'The Bar' },
-  { id: 15, img: 'chefs-special.jpg', caption: "Chef's Special" },
-  { id: 16, img: 'golden-hour.jpg', caption: 'Golden Hour' },
+  { id: 1, src: galleryImg1, caption: 'The Pool Cabana' },
+  { id: 2, src: galleryImg2, caption: 'Crispy Bites' },
+  { id: 3, src: galleryImg3, caption: 'Poolside Gathering' },
+  { id: 4, src: galleryImg4, caption: "Chef's Fried Rice" },
+  { id: 5, src: galleryImg5, caption: 'Team SilentKrowd' },
+  { id: 6, src: galleryImg6, caption: 'Evening Ambience' },
+  { id: 7, src: galleryImg7, caption: 'The Terrace' },
+  { id: 8, src: galleryImg8, caption: 'Sunset Session' },
+  { id: 9, src: galleryImg9, caption: 'Signature Plate' },
+  { id: 10, src: galleryImg10, caption: 'Private Cabana' },
+  { id: 11, src: galleryImg11, caption: 'Guest Moment' },
+  { id: 12, src: galleryImg12, caption: 'The Lounge' },
+  { id: 13, src: galleryImg13, caption: 'Poolside Evening' },
+  { id: 14, src: galleryImg14, caption: 'The Bar' },
+  { id: 15, src: galleryImg15, caption: "Chef's Special" },
+  { id: 16, src: galleryImg16, caption: 'Golden Hour' },
 ]
 
 const featured = {
-  img: 'featured-poolside.jpg',
+  src: featuredImg,
   heading: 'A World Apart',
   description:
     'Cabanas draped in white linen, the pool catching the last light of day — SilentKrowd was built for evenings that linger.',
 }
 
 
-
-function sizeClasses(size: GalleryImage['size']) {
-  switch (size) {
-    case 'tall':
-      return 'row-span-2'
-    case 'wide':
-      return 'col-span-2'
-    case 'landscape':
-      return 'col-span-2'
-    default:
-      return ''
-  }
-}
 
 /* ───────────────────────── Shared animation variants ───────────────────────── */
 
@@ -216,7 +221,7 @@ function GalleryCard({
       {/* Scroll-linked parallax/zoom wrapper */}
       <motion.div style={{ y: imgY, scale: imgScale }} className="h-full w-full">
         <motion.img
-          src={`/gallery/${item.img}`}
+          src={item.src}
           alt={item.caption}
           loading="lazy"
           whileHover={{ scale: 1.12 }}
@@ -298,7 +303,7 @@ export default function Gallery() {
     const prevI = (activeIndex - 1 + galleryImages.length) % galleryImages.length
       ;[nextI, prevI].forEach((idx) => {
         const preload = new window.Image()
-        preload.src = `/gallery/${galleryImages[idx].img}`
+        preload.src = galleryImages[idx].src
       })
   }, [activeIndex])
 
@@ -400,7 +405,7 @@ export default function Gallery() {
           >
             <motion.img
               style={{ y: featuredImgY, scale: featuredImgScale }}
-              src={`/gallery/${featured.img}`}
+              src={featured.src}
               alt={featured.heading}
               className="absolute inset-0 h-[130%] w-full object-cover brightness-[0.55]"
             />
@@ -559,7 +564,7 @@ export default function Gallery() {
                 className="max-h-[85vh] max-w-4xl cursor-grab overflow-hidden rounded-sm active:cursor-grabbing"
               >
                 <img
-                  src={`/gallery/${galleryImages[activeIndex].img}`}
+                  src={galleryImages[activeIndex].src}
                   alt={galleryImages[activeIndex].caption}
                   className="max-h-[85vh] w-auto select-none object-contain brightness-90"
                   draggable={false}

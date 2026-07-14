@@ -1,7 +1,17 @@
 // src/services/adminApi.ts
 import { supabase } from '@/lib/supabase'
 import { callFunction } from '@/services/functions'
-import type { OrderStatus, Profile, Customer, OrderWithItems, Coupon, StaffActivityLog } from '@/types/database'
+import type {
+  OrderStatus,
+  Profile,
+  Customer,
+  OrderWithItems,
+  Coupon,
+  StaffActivityLog,
+  Reservation,
+  ReservationStatus,
+  ContactMessage,
+} from '@/types/database'
 
 // ---------------------------------------------------------------------------
 // Dashboard
@@ -289,5 +299,82 @@ export async function getAllSettings(): Promise<Record<string, unknown>> {
 
 export async function updateSetting(key: string, value: unknown): Promise<void> {
   const { error } = await supabase.from('settings').upsert({ key, value })
+  if (error) throw new Error(error.message)
+}
+
+// ---------------------------------------------------------------------------
+// Reservations
+// ---------------------------------------------------------------------------
+
+export async function listReservations(params: {
+  search?: string
+  status?: ReservationStatus | 'all'
+  page?: number
+  pageSize?: number
+}): Promise<{ rows: Reservation[]; count: number }> {
+  const { search, status = 'all', page = 1, pageSize = 20 } = params
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let query = supabase
+    .from('reservations')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (status !== 'all') {
+    query = query.eq('status', status)
+  }
+  if (search?.trim()) {
+    query = query.or(`full_name.ilike.%${search.trim()}%,phone.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%`)
+  }
+
+  const { data, error, count } = await query.range(from, to)
+  if (error) throw new Error(error.message)
+  return { rows: (data ?? []) as Reservation[], count: count ?? 0 }
+}
+
+export async function updateReservationStatus(id: string, status: ReservationStatus): Promise<void> {
+  const { error } = await supabase.from('reservations').update({ status }).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+// ---------------------------------------------------------------------------
+// Contact Messages
+// ---------------------------------------------------------------------------
+
+export async function listContactMessages(params: {
+  search?: string
+  unreadOnly?: boolean
+  page?: number
+  pageSize?: number
+}): Promise<{ rows: ContactMessage[]; count: number }> {
+  const { search, unreadOnly = false, page = 1, pageSize = 20 } = params
+  const from = (page - 1) * pageSize
+  const to = from + pageSize - 1
+
+  let query = supabase
+    .from('contact_messages')
+    .select('*', { count: 'exact' })
+    .order('created_at', { ascending: false })
+
+  if (unreadOnly) {
+    query = query.eq('read', false)
+  }
+  if (search?.trim()) {
+    query = query.or(`full_name.ilike.%${search.trim()}%,email.ilike.%${search.trim()}%,subject.ilike.%${search.trim()}%`)
+  }
+
+  const { data, error, count } = await query.range(from, to)
+  if (error) throw new Error(error.message)
+  return { rows: (data ?? []) as ContactMessage[], count: count ?? 0 }
+}
+
+export async function markMessageRead(id: string): Promise<void> {
+  const { error } = await supabase.from('contact_messages').update({ read: true }).eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteContactMessage(id: string): Promise<void> {
+  const { error } = await supabase.from('contact_messages').delete().eq('id', id)
   if (error) throw new Error(error.message)
 }

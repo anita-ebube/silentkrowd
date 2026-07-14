@@ -48,7 +48,7 @@ export function CartDrawer() {
                 lines.map((line) => (
                   <div key={line.id} className="mb-5 flex gap-4 border-b border-SilentKrowd-border pb-5 last:border-0">
                     <img
-                      src={`https://picsum.photos/seed/${line.img}/200/200`}
+                      src={line.img}
                       alt=""
                       className="h-16 w-16 flex-shrink-0 rounded-sm object-cover brightness-75"
                     />

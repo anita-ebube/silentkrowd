@@ -22,7 +22,7 @@ export function MenuItemModal({ item, onClose }: { item: MenuItem | null; onClos
         <div className="grid grid-cols-1 overflow-hidden rounded-sm bg-SilentKrowd-charcoal md:grid-cols-2">
           <div className="relative h-[50vh] md:h-[80vh]">
             <img
-              src={`https://picsum.photos/seed/${item.img}/800/1000`}
+              src={item.img}
               alt={item.name}
               className="h-full w-full object-cover brightness-50 contrast-110 saturate-75"
             />

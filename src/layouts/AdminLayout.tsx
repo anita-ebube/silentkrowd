@@ -1,6 +1,6 @@
 // src/layouts/AdminLayout.tsx
 import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ShoppingBag, Users, UserCog, Tag, Settings as SettingsIcon, LogOut } from 'lucide-react'
+import { LayoutDashboard, ShoppingBag, Users, UserCog, Tag, Calendar, Mail, Settings as SettingsIcon, LogOut } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/utils/cn'
 
@@ -16,6 +16,8 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/admin/orders', label: 'Orders', icon: ShoppingBag },
   { to: '/admin/customers', label: 'Customers', icon: Users },
+  { to: '/admin/reservations', label: 'Reservations', icon: Calendar },
+  { to: '/admin/messages', label: 'Messages', icon: Mail },
   { to: '/admin/staff', label: 'Staff', icon: UserCog, adminOnly: true },
   { to: '/admin/coupons', label: 'Coupons', icon: Tag, adminOnly: true },
   { to: '/admin/settings', label: 'Settings', icon: SettingsIcon, adminOnly: true },

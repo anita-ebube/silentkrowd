@@ -42,7 +42,7 @@ export function Spaces() {
               className="group relative h-[280px] overflow-hidden rounded-sm border border-SilentKrowd-border text-left transition-colors duration-500 hover:border-SilentKrowd-gold/30 md:h-[360px]"
             >
               <img
-                src={`https://picsum.photos/seed/${space.img}/600/800`}
+                src={space.img}
                 alt={space.title}
                 loading="lazy"
                 className="absolute inset-0 h-full w-full object-cover brightness-[0.35] contrast-110 transition-transform duration-700 group-hover:scale-110"

@@ -61,7 +61,7 @@ export function Timeline() {
                     <p className="text-sm font-light leading-relaxed text-SilentKrowd-muted">{stop.desc}</p>
                   </div>
                   <ImageReveal
-                    src={`https://picsum.photos/seed/${stop.img}/700/500`}
+                    src={stop.img}
                     alt={stop.title}
                     delay={0.1}
                     className={cn(
