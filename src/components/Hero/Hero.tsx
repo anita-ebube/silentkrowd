@@ -2,7 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import heroVideo from '@/assets/hero.MOV'
+import heroVideo from '@/assets/hero.mp4'
 
 const reveal = {
   hidden: { y: '110%', opacity: 0 },
