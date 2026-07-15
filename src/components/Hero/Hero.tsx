@@ -2,7 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import heroVideo from '@/assets/hero.mov'
+
 const reveal = {
   hidden: { y: '110%', opacity: 0 },
   show: { y: 0, opacity: 1 },
@@ -26,14 +26,6 @@ export function Hero() {
         <div
           className="hero-orb h-[400px] w-[400px] bg-SilentKrowd-gold opacity-[0.08]"
           style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)', animationDelay: '-8s' }}
-        />
-        <video
-          className="absolute inset-0 h-full w-full object-cover brightness-[0.6] contrast-[1.2]"
-          src={heroVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
         />
         <div className="absolute inset-0 bg-gradient-to-b from-SilentKrowd-black/60 via-transparent to-SilentKrowd-black" />
       </motion.div>
