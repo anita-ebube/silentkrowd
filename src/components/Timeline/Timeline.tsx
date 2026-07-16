@@ -5,12 +5,13 @@ import { ImageReveal } from '@/components/ui/ImageReveal'
 import { timelineData } from '@/data/timeline'
 import { cn } from '@/utils/cn'
 
-function TimelineDot({ progress, index, total }: { progress: any; index: number; total: number }) {
+function TimelineDot({ index, total }: { index: number; total: number }) {
   const threshold = (index + 0.5) / total
-  const opacity = useTransform(progress, [threshold - 0.05, threshold], [0, 1])
   return (
     <motion.div
-      style={{ opacity }}
+      initial={{ opacity: 0 }}
+      whileInView={{ opacity: 1 }}
+      viewport={{ once: true, amount: threshold }}
       className="absolute left-5 top-2 h-3 w-3 -translate-x-1/2 rounded-full border border-SilentKrowd-gold bg-SilentKrowd-gold shadow-[0_0_20px_rgba(201,169,110,0.4)] md:left-1/2"
     />
   )
@@ -45,7 +46,7 @@ export function Timeline() {
             const reverse = i % 2 === 1
             return (
               <div key={stop.id} className="relative pb-24 md:pb-32 last:pb-0">
-                <TimelineDot progress={scrollYProgress} index={i} total={timelineData.length} />
+                <TimelineDot index={i} total={timelineData.length} />
                 <div className="pl-12 md:grid md:grid-cols-2 md:gap-16 md:pl-0">
                   <div
                     className={cn(

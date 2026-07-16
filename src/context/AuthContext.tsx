@@ -4,7 +4,7 @@
 // Wraps the Supabase session + the matching `profiles` row (role/status),
 // since almost everything that cares about auth actually cares about role.
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from '@/lib/supabase'
 import type { Profile } from '@/types/database'
@@ -28,13 +28,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   async function loadProfile(userId: string) {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single()
+    const { data, error } = await supabase.from('profiles').select('id, role, status, full_name, email, avatar_url').eq('id', userId).single()
     if (error) {
       console.error('Failed to load profile', error)
       setProfile(null)
       return
     }
-    setProfile(data as Profile)
+    setProfile(data as unknown as Profile)
   }
 
   useEffect(() => {
@@ -98,16 +98,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (session?.user) await loadProfile(session.user.id)
   }
 
-  const value: AuthContextValue = {
-    session,
-    profile,
-    loading,
-    isAdmin: profile?.role === 'admin' && profile?.status === 'active',
-    isStaff: profile?.role === 'staff' && profile?.status === 'active',
-    signIn,
-    signOut,
-    refreshProfile,
-  }
+  const value = useMemo<AuthContextValue>(
+    () => ({
+      session,
+      profile,
+      loading,
+      isAdmin: profile?.role === 'admin' && profile?.status === 'active',
+      isStaff: profile?.role === 'staff' && profile?.status === 'active',
+      signIn,
+      signOut,
+      refreshProfile,
+    }),
+    [session, profile, loading, signIn, signOut, refreshProfile],
+  )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }

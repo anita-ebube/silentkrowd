@@ -3,6 +3,7 @@ import { useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import heroVideo from '@/assets/hero.mp4'
+import posterImg from '@/assets/home/outdoor.jpg'
 
 const reveal = {
   hidden: { y: '110%', opacity: 0 },
@@ -35,6 +36,7 @@ export function Hero() {
           loop
           muted
           playsInline
+          poster={posterImg}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-SilentKrowd-black/60 via-transparent to-SilentKrowd-black" />
       </motion.div>

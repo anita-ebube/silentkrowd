@@ -1,11 +1,9 @@
-import { useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import {
   motion,
   AnimatePresence,
   useScroll,
   useTransform,
-  useMotionValue,
-  useSpring,
   animate,
   type PanInfo,
 } from 'framer-motion'
@@ -95,30 +93,7 @@ const cardVariants = {
   },
 }
 
-/* ───────────────────────── Magnetic hook ───────────────────────── */
 
-function useMagnetic(strength = 0.35) {
-  const ref = useRef<HTMLElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-  const springX = useSpring(x, { stiffness: 150, damping: 14, mass: 0.15 })
-  const springY = useSpring(y, { stiffness: 150, damping: 14, mass: 0.15 })
-
-  function onMouseMove(e: React.MouseEvent) {
-    const el = ref.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    x.set((e.clientX - rect.left - rect.width / 2) * strength)
-    y.set((e.clientY - rect.top - rect.height / 2) * strength)
-  }
-
-  function onMouseLeave() {
-    x.set(0)
-    y.set(0)
-  }
-
-  return { ref, style: { x: springX, y: springY }, onMouseMove, onMouseLeave }
-}
 
 /* ───────────────────────── Counter ───────────────────────── */
 
@@ -149,9 +124,9 @@ function Counter({ value, suffix, isInfinity }: { value: number; suffix: string;
   )
 }
 
-/* ───────────────────────── Gallery card: tilt + glow + scroll zoom ───────────────────────── */
+/* ───────────────────────── Gallery card: CSS-based hover + shared scroll parallax ───────────────────────── */
 
-function GalleryCard({
+const GalleryCard = memo(function GalleryCard({
   item,
   index,
   onOpen,
@@ -161,40 +136,9 @@ function GalleryCard({
   onOpen: () => void
 }) {
   const cardRef = useRef<HTMLButtonElement>(null)
-
-  // Tilt (spring-smoothed)
-  const rotateX = useMotionValue(0)
-  const rotateY = useMotionValue(0)
-  const springRotateX = useSpring(rotateX, { stiffness: 220, damping: 22 })
-  const springRotateY = useSpring(rotateY, { stiffness: 220, damping: 22 })
-
-  // Cursor-following glow position (as % within the card)
-  const glowX = useMotionValue(50)
-  const glowY = useMotionValue(50)
-  const glowBackground = useTransform([glowX, glowY], ([gx, gy]) =>
-    `radial-gradient(circle at ${gx}% ${gy}%, rgba(212,175,55,0.35), transparent 55%)`,
-  )
-
-  // Scroll-linked parallax + zoom on the image
   const { scrollYProgress } = useScroll({ target: cardRef, offset: ['start end', 'end start'] })
   const imgY = useTransform(scrollYProgress, [0, 1], [-18, 18])
   const imgScale = useTransform(scrollYProgress, [0, 0.5, 1], [1.15, 1, 1.08])
-
-  function handleMouseMove(e: React.MouseEvent<HTMLButtonElement>) {
-    if (!cardRef.current) return
-    const rect = cardRef.current.getBoundingClientRect()
-    const px = (e.clientX - rect.left) / rect.width
-    const py = (e.clientY - rect.top) / rect.height
-    rotateX.set((py - 0.5) * -10)
-    rotateY.set((px - 0.5) * 10)
-    glowX.set(px * 100)
-    glowY.set(py * 100)
-  }
-
-  function handleMouseLeave() {
-    rotateX.set(0)
-    rotateY.set(0)
-  }
 
   return (
     <motion.button
@@ -207,15 +151,8 @@ function GalleryCard({
         rotate: 2,
         transition: { type: 'spring', stiffness: 260, damping: 20 },
       }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       onClick={onOpen}
-      style={{
-        perspective: 900,
-        rotateX: springRotateX,
-        rotateY: springRotateY,
-        transitionDelay: `${(index % 4) * 0.06}s`,
-      }}
+      style={{ transitionDelay: `${(index % 4) * 0.06}s` }}
       className={`group relative block aspect-[4/5] w-full origin-bottom overflow-hidden rounded-xl border border-SilentKrowd-border/60 shadow-lg shadow-black/20 transition-shadow duration-500 will-change-transform hover:z-10 hover:shadow-2xl hover:shadow-SilentKrowd-gold/20`}
     >
       {/* Scroll-linked parallax/zoom wrapper */}
@@ -233,12 +170,6 @@ function GalleryCard({
       {/* Base gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-t from-SilentKrowd-black/90 via-SilentKrowd-black/10 to-transparent opacity-70 transition-opacity duration-500 group-hover:opacity-100" />
 
-      {/* Cursor-following golden glow */}
-      <motion.div
-        style={{ background: glowBackground }}
-        className="pointer-events-none absolute inset-0 opacity-0 mix-blend-overlay transition-opacity duration-500 group-hover:opacity-100"
-      />
-
       {/* Glowing ring border on hover */}
       <div className="pointer-events-none absolute inset-0 rounded-xl ring-1 ring-inset ring-SilentKrowd-gold/0 shadow-[0_0_0_0_rgba(212,175,55,0)] transition-all duration-500 group-hover:ring-SilentKrowd-gold/40 group-hover:shadow-[0_0_30px_4px_rgba(212,175,55,0.25)]" />
 
@@ -251,7 +182,7 @@ function GalleryCard({
       </div>
     </motion.button>
   )
-}
+})
 
 /* ───────────────────────── Page ───────────────────────── */
 
@@ -269,10 +200,7 @@ export default function Gallery() {
   const featuredImgY = useTransform(featuredProgress, [0, 1], [-40, 40])
   const featuredImgScale = useTransform(featuredProgress, [0, 0.5, 1], [1.18, 1.05, 1.12])
 
-  const ctaMagnetic = useMagnetic(0.35)
-  const closeMagnetic = useMagnetic(0.5)
-  const prevMagnetic = useMagnetic(0.45)
-  const nextMagnetic = useMagnetic(0.45)
+
 
   function close() {
     setActiveIndex(null)
@@ -475,11 +403,7 @@ export default function Gallery() {
               Reserve your table, your cabana, or your evening — and let SilentKrowd take it from there.
             </p>
             <motion.a
-              ref={ctaMagnetic.ref as React.RefObject<HTMLAnchorElement>}
               href="/reservations"
-              onMouseMove={ctaMagnetic.onMouseMove}
-              onMouseLeave={ctaMagnetic.onMouseLeave}
-              style={ctaMagnetic.style}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.96 }}
               transition={{ type: 'spring', stiffness: 300, damping: 18 }}
@@ -498,46 +422,34 @@ export default function Gallery() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9990] flex items-center justify-center bg-SilentKrowd-black/95 p-6 backdrop-blur-xl"
+            className="fixed inset-0 z-[9990] flex items-center justify-center bg-SilentKrowd-black/97 p-6 backdrop-blur-lg"
             onClick={close}
           >
             <motion.button
-              ref={closeMagnetic.ref as React.RefObject<HTMLButtonElement>}
               aria-label="Close"
               onClick={close}
-              onMouseMove={closeMagnetic.onMouseMove}
-              onMouseLeave={closeMagnetic.onMouseLeave}
-              style={closeMagnetic.style}
               whileHover={{ scale: 1.15 }}
               className="absolute right-6 top-6 z-10 text-SilentKrowd-white/60 transition-colors hover:text-SilentKrowd-gold"
             >
               <X size={28} />
             </motion.button>
             <motion.button
-              ref={prevMagnetic.ref as React.RefObject<HTMLButtonElement>}
               aria-label="Previous image"
               onClick={(e) => {
                 e.stopPropagation()
                 prev()
               }}
-              onMouseMove={prevMagnetic.onMouseMove}
-              onMouseLeave={prevMagnetic.onMouseLeave}
-              style={prevMagnetic.style}
               whileHover={{ scale: 1.15 }}
               className="absolute left-4 z-10 text-SilentKrowd-white/60 transition-colors hover:text-SilentKrowd-gold md:left-8"
             >
               <ChevronLeft size={32} />
             </motion.button>
             <motion.button
-              ref={nextMagnetic.ref as React.RefObject<HTMLButtonElement>}
               aria-label="Next image"
               onClick={(e) => {
                 e.stopPropagation()
                 next()
               }}
-              onMouseMove={nextMagnetic.onMouseMove}
-              onMouseLeave={nextMagnetic.onMouseLeave}
-              style={nextMagnetic.style}
               whileHover={{ scale: 1.15 }}
               className="absolute right-4 z-10 text-SilentKrowd-white/60 transition-colors hover:text-SilentKrowd-gold md:right-8"
             >

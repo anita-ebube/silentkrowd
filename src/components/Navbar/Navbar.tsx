@@ -20,8 +20,15 @@ export function Navbar() {
   const { totalCount, toggleCart } = useCart()
 
   useEffect(() => {
+    let ticking = false
     function onScroll() {
-      setScrolled(window.scrollY > 40)
+      if (!ticking) {
+        ticking = true
+        requestAnimationFrame(() => {
+          setScrolled(window.scrollY > 40)
+          ticking = false
+        })
+      }
     }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
@@ -31,7 +38,7 @@ export function Navbar() {
     <>
       <nav
         className={`fixed inset-x-0 top-0 z-[9000] transition-colors duration-500 ${
-          scrolled ? 'bg-SilentKrowd-black/90 backdrop-blur-xl border-b border-SilentKrowd-border' : 'bg-transparent'
+          scrolled ? 'bg-SilentKrowd-black/95 backdrop-blur-lg border-b border-SilentKrowd-border' : 'bg-transparent'
         }`}
       >
         <Container className="flex items-center justify-between py-5">
@@ -87,7 +94,7 @@ export function Navbar() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[9990] flex items-center justify-center bg-SilentKrowd-black/98 backdrop-blur-2xl md:hidden"
+            className="fixed inset-0 z-[9990] flex items-center justify-center bg-SilentKrowd-black md:hidden"
           >
             <button
               aria-label="Close menu"

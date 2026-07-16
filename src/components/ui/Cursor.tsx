@@ -17,10 +17,27 @@ export function Cursor() {
     let ringX = 0,
       ringY = 0
     let rafId: number
+    let idleTimer: ReturnType<typeof setTimeout>
+    let isIdle = false
+
+    function startRaf() {
+      isIdle = false
+      clearTimeout(idleTimer)
+      if (!rafId) rafId = requestAnimationFrame(raf)
+    }
+
+    function stopRaf() {
+      isIdle = true
+      cancelAnimationFrame(rafId)
+      rafId = 0
+    }
 
     function handleMove(e: MouseEvent) {
       mouseX = e.clientX
       mouseY = e.clientY
+      if (isIdle) startRaf()
+      clearTimeout(idleTimer)
+      idleTimer = setTimeout(stopRaf, 200)
     }
 
     function handleOver(e: MouseEvent) {
@@ -45,13 +62,13 @@ export function Cursor() {
     window.addEventListener('mousemove', handleMove)
     window.addEventListener('mouseover', handleOver)
     window.addEventListener('mouseout', handleOut)
-    rafId = requestAnimationFrame(raf)
 
     return () => {
       window.removeEventListener('mousemove', handleMove)
       window.removeEventListener('mouseover', handleOver)
       window.removeEventListener('mouseout', handleOut)
       cancelAnimationFrame(rafId)
+      clearTimeout(idleTimer)
     }
   }, [isTouch])
 

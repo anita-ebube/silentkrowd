@@ -1,5 +1,5 @@
-import { useMemo, useRef, useState } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { memo, useDeferredValue, useMemo, useState } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Heart, SearchX } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { MenuItemModal } from '@/components/ui/MenuItemModal'
@@ -66,33 +66,9 @@ const cardVariants = {
   },
 }
 
-/* ───────────────────────── Magnetic hook (shared pattern with Gallery) ───────────────────────── */
+/* ───────────────────────── Menu card: CSS-based hover effects ───────────────────────── */
 
-function useMagnetic(strength = 0.4) {
-  const ref = useRef<HTMLElement>(null)
-  const x = useMotionValue(0)
-  const y = useMotionValue(0)
-  const springX = useSpring(x, { stiffness: 200, damping: 16, mass: 0.15 })
-  const springY = useSpring(y, { stiffness: 200, damping: 16, mass: 0.15 })
-
-  function onMouseMove(e: React.MouseEvent) {
-    const el = ref.current
-    if (!el) return
-    const rect = el.getBoundingClientRect()
-    x.set((e.clientX - rect.left - rect.width / 2) * strength)
-    y.set((e.clientY - rect.top - rect.height / 2) * strength)
-  }
-  function onMouseLeave() {
-    x.set(0)
-    y.set(0)
-  }
-
-  return { ref, style: { x: springX, y: springY }, onMouseMove, onMouseLeave }
-}
-
-/* ───────────────────────── Menu card: tilt + cursor glow ───────────────────────── */
-
-function MenuCard({
+const MenuCard = memo(function MenuCard({
   item,
   index,
   isFavorite,
@@ -107,36 +83,6 @@ function MenuCard({
   onToggleFav: () => void
   onAdd: () => void
 }) {
-  const cardRef = useRef<HTMLDivElement>(null)
-
-  const rotateX = useMotionValue(0)
-  const rotateY = useMotionValue(0)
-  const springRotateX = useSpring(rotateX, { stiffness: 220, damping: 22 })
-  const springRotateY = useSpring(rotateY, { stiffness: 220, damping: 22 })
-
-  const glowX = useMotionValue(50)
-  const glowY = useMotionValue(50)
-  const glowBackground = useTransform([glowX, glowY], ([gx, gy]) =>
-    `radial-gradient(circle at ${gx}% ${gy}%, rgba(212,175,55,0.35), transparent 55%)`,
-  )
-
-  const addMagnetic = useMagnetic(0.5)
-
-  function handleMouseMove(e: React.MouseEvent<HTMLDivElement>) {
-    const rect = cardRef.current?.getBoundingClientRect()
-    if (!rect) return
-    const px = (e.clientX - rect.left) / rect.width
-    const py = (e.clientY - rect.top) / rect.height
-    rotateX.set((py - 0.5) * -6)
-    rotateY.set((px - 0.5) * 6)
-    glowX.set(px * 100)
-    glowY.set(py * 100)
-  }
-  function handleMouseLeave() {
-    rotateX.set(0)
-    rotateY.set(0)
-  }
-
   return (
     <motion.div
       layout
@@ -145,20 +91,12 @@ function MenuCard({
       animate="show"
       exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
       whileHover={{ y: -6, transition: { type: 'spring', stiffness: 260, damping: 20 } }}
-      style={{
-        perspective: 900,
-        rotateX: springRotateX,
-        rotateY: springRotateY,
-        transitionDelay: `${(index % 4) * 0.05}s`,
-      }}
+      style={{ transitionDelay: `${(index % 4) * 0.05}s` }}
       className="group relative flex flex-col overflow-hidden rounded-2xl border border-SilentKrowd-border bg-SilentKrowd-glass shadow-lg shadow-black/20 transition-shadow duration-500 hover:shadow-2xl hover:shadow-SilentKrowd-gold/10"
     >
       {/* Image */}
       <div
-        ref={cardRef}
         onClick={onOpen}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
         data-cursor-hover
         className="relative h-56 cursor-pointer overflow-hidden md:h-64"
       >
@@ -172,13 +110,7 @@ function MenuCard({
         />
         <div className="absolute inset-0 bg-gradient-to-t from-SilentKrowd-black/60 via-SilentKrowd-black/5 to-transparent" />
 
-        {/* Cursor-following golden glow */}
-        <motion.div
-          style={{ background: glowBackground }}
-          className="pointer-events-none absolute inset-0 opacity-0 mix-blend-overlay transition-opacity duration-500 group-hover:opacity-100"
-        />
-
-        {/* Glowing ring on hover */}
+        {/* Glowing ring on hover (CSS-only) */}
         <div className="pointer-events-none absolute inset-0 rounded-t-2xl ring-1 ring-inset ring-SilentKrowd-gold/0 shadow-[0_0_0_0_rgba(212,175,55,0)] transition-all duration-500 group-hover:ring-SilentKrowd-gold/30 group-hover:shadow-[0_0_28px_4px_rgba(212,175,55,0.18)]" />
 
         {/* Number badge */}
@@ -219,19 +151,13 @@ function MenuCard({
             {item.price > 0 ? `₦${item.price.toLocaleString()}` : 'Ask Server'}
           </span>
           <motion.button
-            ref={addMagnetic.ref as React.RefObject<HTMLButtonElement>}
             aria-label="Add to order"
-            onMouseMove={addMagnetic.onMouseMove}
-            onMouseLeave={addMagnetic.onMouseLeave}
-            style={addMagnetic.style}
-            whileHover={{ scale: 1.15 }}
             whileTap={{ scale: 0.9 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 18 }}
             onClick={(e) => {
               e.stopPropagation()
               onAdd()
             }}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-SilentKrowd-gold text-SilentKrowd-black transition-colors hover:bg-SilentKrowd-goldLight"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-SilentKrowd-gold text-SilentKrowd-black transition-colors hover:bg-SilentKrowd-goldLight hover:scale-110"
           >
             <Plus size={16} />
           </motion.button>
@@ -239,25 +165,26 @@ function MenuCard({
       </div>
     </motion.div>
   )
-}
+})
 
 /* ───────────────────────── Page ───────────────────────── */
 
 export default function Menu() {
   const [category, setCategory] = useState<MenuCategory | 'food'>('food')
   const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search)
   const [detail, setDetail] = useState<MenuItem | null>(null)
   const [favorites, setFavorites] = useState<Set<number>>(new Set())
   const { addItem } = useCart()
 
  const items = useMemo(() => {
-  const q = search.toLowerCase()
+  const q = deferredSearch.toLowerCase()
   return menuData.filter((item) => {
     const matchesCategory = item.category === category
     const matchesSearch = !q || item.name.toLowerCase().includes(q) || item.category.includes(q)
     return matchesCategory && matchesSearch
   })
-}, [category, search])
+}, [category, deferredSearch])
 
   function toggleFav(id: number) {
     setFavorites((prev) => {

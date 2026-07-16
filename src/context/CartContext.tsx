@@ -74,19 +74,22 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const totalCount = useMemo(() => lines.reduce((sum, l) => sum + l.qty, 0), [lines])
   const subtotal = useMemo(() => lines.reduce((sum, l) => sum + l.qty * l.price, 0), [lines])
 
-  const value: CartContextValue = {
-    lines,
-    isOpen,
-    openCart: () => setIsOpen(true),
-    closeCart: () => setIsOpen(false),
-    toggleCart: () => setIsOpen((v) => !v),
-    addItem,
-    updateQty,
-    removeItem,
-    clearCart,
-    totalCount,
-    subtotal,
-  }
+  const value = useMemo<CartContextValue>(
+    () => ({
+      lines,
+      isOpen,
+      openCart: () => setIsOpen(true),
+      closeCart: () => setIsOpen(false),
+      toggleCart: () => setIsOpen((v) => !v),
+      addItem,
+      updateQty,
+      removeItem,
+      clearCart,
+      totalCount,
+      subtotal,
+    }),
+    [lines, isOpen, addItem, updateQty, removeItem, clearCart, totalCount, subtotal],
+  )
 
   return <CartContext.Provider value={value}>{children}</CartContext.Provider>
 }

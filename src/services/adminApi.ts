@@ -17,6 +17,31 @@ import type {
 // Dashboard
 // ---------------------------------------------------------------------------
 
+let dashboardCache: { data: DashboardData | null; expiry: number } = { data: null, expiry: 0 }
+
+export interface DashboardData {
+  stats: DashboardStats
+  revenue: RevenuePoint[]
+  popularFoods: PopularFood[]
+  latestOrders: LatestOrder[]
+}
+
+export async function getDashboardData(days = 14, foodLimit = 5, orderLimit = 8): Promise<DashboardData> {
+  const now = Date.now()
+  if (dashboardCache.data && dashboardCache.expiry > now) {
+    return dashboardCache.data
+  }
+  const [stats, revenue, popularFoods, latestOrders] = await Promise.all([
+    getDashboardStats(),
+    getRevenueSeries(days),
+    getPopularFoods(foodLimit),
+    getLatestOrders(orderLimit),
+  ])
+  const data = { stats, revenue, popularFoods, latestOrders }
+  dashboardCache = { data, expiry: now + 30_000 }
+  return data
+}
+
 export interface DashboardStats {
   today_sales: number
   week_sales: number
@@ -120,7 +145,7 @@ export async function listOrders({
 export async function getOrderDetail(orderId: string): Promise<OrderWithItems> {
   const { data, error } = await supabase
     .from('orders')
-    .select('*, order_items(*), customer:customers(*), payment:payments(*)')
+    .select('id, order_number, status, total_amount, created_at, assigned_staff_id, cancelled_reason, notes, order_items(id, name, qty, price, category), customer:customers(id, full_name, phone, email), payment:payments(id, reference, amount, status, method)')
     .eq('id', orderId)
     .single()
 
@@ -170,7 +195,7 @@ export async function listCustomers({
 }: ListCustomersParams): Promise<{ rows: Customer[]; count: number }> {
   let query = supabase
     .from('customers')
-    .select('*', { count: 'exact' })
+    .select('id, full_name, phone, email, total_orders, total_spent, last_order_at, created_at', { count: 'exact' })
     .order('last_order_at', { ascending: false, nullsFirst: false })
 
   if (search?.trim()) {
@@ -190,9 +215,9 @@ export async function listCustomers({
 // ---------------------------------------------------------------------------
 
 export async function listCoupons(): Promise<Coupon[]> {
-  const { data, error } = await supabase.from('coupons').select('*').order('created_at', { ascending: false })
+  const { data, error } = await supabase.from('coupons').select('id, code, discount_type, discount_value, max_discount, min_order_amount, usage_limit, used_count, active, expires_at, created_at').order('created_at', { ascending: false })
   if (error) throw new Error(error.message)
-  return (data ?? []) as Coupon[]
+  return (data ?? []) as unknown as Coupon[]
 }
 
 export interface CouponInput {
@@ -227,24 +252,24 @@ export async function setCouponActive(couponId: string, active: boolean): Promis
 export async function listStaff(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, role, status, full_name, email, phone, avatar_url, created_at')
     .eq('role', 'staff')
     .order('created_at', { ascending: false })
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as Profile[]
+  return (data ?? []) as unknown as Profile[]
 }
 
 /** All active staff + admins — used for the "assign to" dropdown on orders. */
 export async function listAssignableStaff(): Promise<Profile[]> {
   const { data, error } = await supabase
     .from('profiles')
-    .select('*')
+    .select('id, role, status, full_name, email, phone, avatar_url, created_at')
     .eq('status', 'active')
     .order('full_name')
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as Profile[]
+  return (data ?? []) as unknown as Profile[]
 }
 
 export interface CreateStaffPayload {
@@ -270,14 +295,14 @@ export async function manageStaff(
 export async function getStaffActivity(staffId: string, limit = 20): Promise<StaffActivityLog[]> {
   const { data, error } = await supabase
     .from('staff_activity_logs')
-    .select('*')
+    .select('id, action, target_table, target_id, performed_by, details, created_at')
     .eq('target_table', 'profiles')
     .eq('target_id', staffId)
     .order('created_at', { ascending: false })
     .limit(limit)
 
   if (error) throw new Error(error.message)
-  return (data ?? []) as StaffActivityLog[]
+  return (data ?? []) as unknown as StaffActivityLog[]
 }
 
 // ---------------------------------------------------------------------------

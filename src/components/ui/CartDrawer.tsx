@@ -28,7 +28,7 @@ export function CartDrawer() {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ duration: 0.5, ease: [0.19, 1, 0.22, 1] }}
-            className="fixed inset-y-0 right-0 z-[9995] flex w-full max-w-[420px] flex-col border-l border-SilentKrowd-border bg-SilentKrowd-charcoal/95 backdrop-blur-2xl"
+            className="fixed inset-y-0 right-0 z-[9995] flex w-full max-w-[420px] flex-col border-l border-SilentKrowd-border bg-SilentKrowd-charcoal/98 backdrop-blur-lg"
           >
             <div className="flex items-center justify-between border-b border-SilentKrowd-border p-6">
               <h3 className="font-serif text-xl text-SilentKrowd-white">Your Order</h3>
