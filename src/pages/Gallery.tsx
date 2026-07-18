@@ -8,6 +8,7 @@ import {
   type PanInfo,
 } from 'framer-motion'
 import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
+import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 
@@ -402,15 +403,12 @@ export default function Gallery() {
             <p className="mx-auto mt-4 max-w-md text-sm font-light leading-relaxed text-SilentKrowd-muted md:text-base">
               Reserve your table, your cabana, or your evening — and let SilentKrowd take it from there.
             </p>
-            <motion.a
-              href="/reservations"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.96 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 18 }}
+            <Link
+              to="/reservations"
               className="mt-8 rounded-full bg-SilentKrowd-gold px-10 py-4 text-xs uppercase tracking-[0.2em] text-SilentKrowd-black transition-colors hover:bg-SilentKrowd-goldLight"
             >
               Reserve Your Experience
-            </motion.a>
+            </Link>
           </motion.div>
         </Container>
       </div>

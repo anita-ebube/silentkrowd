@@ -1,4 +1,5 @@
 import { type ReactNode, type MouseEvent, useRef } from 'react'
+import { Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { cn } from '@/utils/cn'
 
@@ -64,16 +65,16 @@ export function Button({
 
   if (href) {
     return (
-      <a
+      <Link
         ref={ref as React.RefObject<HTMLAnchorElement>}
-        href={href}
+        to={href}
         onMouseMove={handleMouseMove}
         onMouseLeave={handleMouseLeave}
         onClick={onClick}
         className={base}
       >
         {content}
-      </a>
+      </Link>
     )
   }
 

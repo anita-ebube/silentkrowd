@@ -3,7 +3,7 @@ import { Routes, Route, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { MainLayout } from '@/layouts/MainLayout'
 import { AdminLayout } from '@/layouts/AdminLayout'
-import { Loader } from '@/components/ui/Loader'
+import { Loader, PageLoader } from '@/components/ui/Loader'
 import { AuthProvider } from '@/context/AuthContext'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 
@@ -212,7 +212,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Loader show={loading} />
-      <Suspense fallback={null}>
+      <Suspense fallback={<PageLoader />}>
         <AnimatedRoutes />
       </Suspense>
     </AuthProvider>
