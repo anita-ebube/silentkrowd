@@ -16,7 +16,7 @@ export function Footer() {
         <div className="mb-20 grid grid-cols-1 gap-12 md:grid-cols-12 md:gap-8">
           <div className="md:col-span-4">
             <Link to="/" className="font-serif text-3xl tracking-[0.15em] text-SilentKrowd-white">
-              SilentKrowd
+              SilentKrowd <span className="text-SilentKrowd-gold">Luxury</span>
             </Link>
             <p className="mt-4 max-w-xs text-sm font-light leading-relaxed text-SilentKrowd-muted">
               A destination for unforgettable nights. Lounge, dining, and nightlife reimagined.
@@ -75,7 +75,7 @@ export function Footer() {
           </div>
         </div>
         <div className="flex flex-col items-center justify-between gap-4 border-t border-SilentKrowd-border pt-8 md:flex-row">
-          <p className="text-xs font-light text-SilentKrowd-muted">© {new Date().getFullYear()} SilentKrowd. All rights reserved.</p>
+          <p className="text-xs font-light text-SilentKrowd-muted">© {new Date().getFullYear()} SilentKrowd Luxury. All rights reserved.</p>
           <div className="flex gap-6">
             <a href="#" className="text-xs font-light text-SilentKrowd-muted transition-colors hover:text-SilentKrowd-white">
               Privacy

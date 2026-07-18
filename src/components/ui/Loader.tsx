@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from 'framer-motion'
 
-const brand = 'SilentKrowd'
+const brand = 'SilentKrowd Luxury'
 const tagline = 'Lounge · Dining · Nightlife'
 
 export function Loader({ show }: { show: boolean }) {

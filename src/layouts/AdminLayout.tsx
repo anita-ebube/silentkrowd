@@ -32,7 +32,7 @@ export function AdminLayout() {
     <div className="flex min-h-screen bg-SilentKrowd-black">
       <aside className="flex w-64 flex-shrink-0 flex-col border-r border-SilentKrowd-border px-4 py-8">
         <div className="mb-10 px-3">
-          <p className="font-serif text-xl text-SilentKrowd-gold">SilentKrowd</p>
+          <p className="font-serif text-xl text-SilentKrowd-gold">SilentKrowd Luxury</p>
           <p className="text-xs uppercase tracking-[0.15em] text-SilentKrowd-muted">
             {isAdmin ? 'Admin Panel' : 'Staff Panel'}
           </p>

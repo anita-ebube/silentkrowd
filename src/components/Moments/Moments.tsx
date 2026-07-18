@@ -9,7 +9,7 @@ export function Moments() {
       <Container className="mb-16">
         <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between">
           <div>
-            <span className="mb-4 block text-[0.6rem] uppercase tracking-[0.4em] text-SilentKrowd-gold">@SilentKrowd</span>
+            <span className="mb-4 block text-[0.6rem] uppercase tracking-[0.4em] text-SilentKrowd-gold">@SilentKrowdLuxury</span>
             <h2 className="font-serif text-4xl text-SilentKrowd-white md:text-6xl">
               Guest <em className="text-SilentKrowd-gold not-italic">moments</em>
             </h2>

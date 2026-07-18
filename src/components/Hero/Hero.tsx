@@ -61,7 +61,7 @@ export function Hero() {
             transition={{ duration: 1, delay: 0.12, ease: [0.19, 1, 0.22, 1] }}
             className="font-serif text-7xl leading-[0.85] tracking-[-0.03em] text-SilentKrowd-white md:text-8xl lg:text-[10rem]"
           >
-            SilentKrowd
+            SilentKrowd <span className="text-SilentKrowd-gold">Luxury</span>
           </motion.h1>
         </div>
         <div className="mb-10 overflow-hidden">
