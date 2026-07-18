@@ -1,8 +1,6 @@
-// src/services/checkout.ts
 import { supabase } from '@/lib/supabase'
 import { callFunction } from '@/services/functions'
 import { toKobo } from '@/utils/currency'
-import type { MenuCategory } from '@/types/database'
 
 export interface CheckoutDetails {
   fullName: string
@@ -11,12 +9,13 @@ export interface CheckoutDetails {
   deliveryAddress: string
   deliveryInstructions?: string
   couponCode?: string
+  idempotencyKey?: string
 }
 
 export interface CheckoutLine {
   menu_item_id: number
   name: string
-  category: MenuCategory
+  category: string
   unit_price: number
   quantity: number
 }
@@ -29,6 +28,7 @@ export interface CreateOrderResult {
   discount_amount: number
   total_amount: number
   reference: string
+  idempotent?: boolean
 }
 
 export async function createOrder(
@@ -42,6 +42,7 @@ export async function createOrder(
     delivery_address: details.deliveryAddress,
     delivery_instructions: details.deliveryInstructions || undefined,
     coupon_code: details.couponCode || undefined,
+    idempotency_key: details.idempotencyKey || undefined,
     items,
   })
 }
@@ -56,11 +57,6 @@ export async function verifyPayment(orderId: string, reference: string): Promise
   return callFunction<VerifyPaymentResult>('verify-payment', { order_id: orderId, reference })
 }
 
-/**
- * Opens the Paystack Inline popup and resolves once the popup's own callback
- * fires with a reference — this does NOT mean the payment is verified, only
- * that Paystack collected one. The caller must still call verifyPayment().
- */
 export function openPaystackPopup(options: {
   email: string
   amountNaira: number

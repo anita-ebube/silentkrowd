@@ -1,7 +1,6 @@
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/Container'
 import { ImageReveal } from '@/components/ui/ImageReveal'
-import destination1 from "../../assets/home/destination1.jpg";
 import destination2 from "../../assets/home/destination2.jpg";
 const lines = ['A destination', 'for unforgettable', 'nights.']
 
@@ -45,7 +44,7 @@ export function Story() {
           <div className="relative h-[500px] lg:col-span-5 md:h-[650px]">
             <div className="relative h-[500px] lg:col-span-5 md:h-[650px]">
               <ImageReveal
-                src={destination1}
+                src={destination2}
                 alt="Lounge interior"
                 className="absolute right-0 top-0 h-[75%] w-[85%] rounded-sm shadow-2xl"
                 imgClassName="brightness-75 contrast-110 saturate-75"

@@ -6,23 +6,21 @@
 // order + order_items + a pending payment row, and returns everything the
 // frontend needs to open Paystack Inline.
 //
-// Known trust boundary: menu prices currently live in the frontend's static
-// src/data/menu.ts, not in the database, so this function has no independent
-// source of truth to validate unit_price against — it trusts what the client
-// sends for each line, then does its own arithmetic for subtotal/total so at
-// least the totals can't be tampered with independently of the line items.
-// If/when menu items move into a `menu_items` table, swap the trust step
-// below (marked TODO) to look prices up server-side instead.
+// Pricing is looked up from the menu_items table (server-side source of truth)
+// rather than trusting client-sent unit_price values. If the table hasn't been
+// created yet (migration 0012 not applied), falls back gracefully to trusting
+// the client — log a warning so the operator knows the canonical table is
+// missing.
 
 import { serviceRoleClient } from '../_shared/auth.ts'
 import { corsHeaders, errorResponse, handleOptions, jsonResponse } from '../_shared/cors.ts'
 
-interface CheckoutItem {
+interface ClientItem {
   menu_item_id: number
-  name: string
-  category: 'food' | 'drinks' | 'wine' | 'spirits' | 'desserts'
-  unit_price: number
   quantity: number
+  unit_price?: number  // legacy — only used when menu_items table is absent
+  name?: string        // legacy
+  category?: string    // legacy
 }
 
 interface CheckoutPayload {
@@ -32,7 +30,16 @@ interface CheckoutPayload {
   delivery_address: string
   delivery_instructions?: string
   coupon_code?: string
-  items: CheckoutItem[]
+  idempotency_key?: string
+  items: ClientItem[]
+}
+
+interface ResolvedItem {
+  menu_item_id: number
+  name: string
+  category: string
+  unit_price: number
+  quantity: number
 }
 
 const PHONE_RE = /^\+?[0-9]{7,15}$/
@@ -50,7 +57,7 @@ Deno.serve(async (req) => {
     return errorResponse('Invalid JSON body')
   }
 
-  const { full_name, phone, email, delivery_address, delivery_instructions, coupon_code, items } =
+  const { full_name, phone, email, delivery_address, delivery_instructions, coupon_code, idempotency_key, items } =
     payload
 
   // ---- validation -----------------------------------------------------
@@ -62,33 +69,95 @@ Deno.serve(async (req) => {
     return errorResponse('Cart is empty.')
 
   for (const item of items) {
-    if (!item.menu_item_id || !item.name || !item.unit_price || !item.quantity) {
+    if (!item.menu_item_id || !item.quantity) {
       return errorResponse('One or more cart items is malformed.')
     }
     if (item.quantity <= 0) return errorResponse('Item quantity must be positive.')
-    if (item.unit_price <= 0) return errorResponse('Item price must be positive.')
   }
 
   const db = serviceRoleClient()
 
-  // ---- upsert guest customer -------------------------------------------
-  const { data: customer, error: customerError } = await db
-    .rpc('upsert_customer', {
-      p_full_name: full_name.trim(),
-      p_phone: phone.trim(),
-      p_email: email?.trim() || null,
-    })
-    .single()
+  // ---- idempotency check ------------------------------------------------
+  if (idempotency_key) {
+    const { data: existingOrder } = await db
+      .from('orders')
+      .select('*')
+      .eq('idempotency_key', idempotency_key)
+      .maybeSingle()
 
-  if (customerError || !customer) {
-    console.error('upsert_customer failed', customerError)
-    return errorResponse('Could not save customer details.', 500)
+    if (existingOrder) {
+      const { data: existingPayment } = await db
+        .from('payments')
+        .select('reference')
+        .eq('order_id', existingOrder.id)
+        .maybeSingle()
+
+      return jsonResponse({
+        order_id: existingOrder.id,
+        order_number: existingOrder.order_number,
+        subtotal: existingOrder.subtotal,
+        delivery_fee: existingOrder.delivery_fee,
+        discount_amount: existingOrder.discount_amount,
+        total_amount: existingOrder.total_amount,
+        reference: existingPayment?.reference,
+        idempotent: true,
+      })
+    }
+  }
+
+  // ---- resolve items (try DB lookup first, fall back to client prices) --
+  let resolvedItems: ResolvedItem[]
+
+  const { data: menuRows, error: menuError } = await db
+    .from('menu_items')
+    .select('id, name, category, price')
+    .in('id', [...new Set(items.map((i) => i.menu_item_id))])
+
+  if (menuError) {
+    console.warn('menu_items table not available — falling back to client-sent prices.', menuError.message)
+  }
+
+  if (menuRows && menuRows.length > 0 && !menuError) {
+    // ---- server-side price lookup (preferred) ---------------------------
+    const priceMap = new Map(menuRows.map((m) => [m.id, m]))
+
+    // Validate every item is in the table
+    for (const item of items) {
+      const menuItem = priceMap.get(item.menu_item_id)
+      if (!menuItem) return errorResponse(`Menu item ${item.menu_item_id} not found.`)
+      if (Number(menuItem.price) <= 0) return errorResponse(`${menuItem.name} cannot be ordered online. Please ask server for price.`)
+    }
+
+    resolvedItems = items.map((item) => {
+      const m = priceMap.get(item.menu_item_id)!
+      return {
+        menu_item_id: item.menu_item_id,
+        name: m.name,
+        category: m.category,
+        unit_price: Number(m.price),
+        quantity: item.quantity,
+      }
+    })
+  } else {
+    // ---- fallback: trust client (legacy mode — migration not yet applied)
+    console.warn('create-order: using client-sent prices because menu_items table is missing or empty.')
+    for (const item of items) {
+      if (!item.unit_price || item.unit_price <= 0) {
+        return errorResponse(`Item ${item.menu_item_id} has no valid price.`)
+      }
+    }
+
+    resolvedItems = items.map((item) => ({
+      menu_item_id: item.menu_item_id,
+      name: item.name || `Item ${item.menu_item_id}`,
+      category: item.category || 'food',
+      unit_price: item.unit_price!,
+      quantity: item.quantity,
+    }))
   }
 
   // ---- pricing ----------------------------------------------------------
-  // TODO: once menu_items exists in the DB, replace this with a lookup of
-  // canonical unit_price per menu_item_id instead of trusting the client.
-  const subtotal = items.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
+  const subtotal = resolvedItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
 
   const { data: feeRow } = await db.from('settings').select('value').eq('key', 'delivery_fee').single()
   const deliveryFee = typeof feeRow?.value === 'number' ? feeRow.value : 7000
@@ -129,6 +198,20 @@ Deno.serve(async (req) => {
 
   const totalAmount = Math.max(subtotal + deliveryFee - discountAmount, 0)
 
+  // ---- upsert guest customer -------------------------------------------
+  const { data: customer, error: customerError } = await db
+    .rpc('upsert_customer', {
+      p_full_name: full_name.trim(),
+      p_phone: phone.trim(),
+      p_email: email?.trim() || null,
+    })
+    .single()
+
+  if (customerError || !customer) {
+    console.error('upsert_customer failed', customerError)
+    return errorResponse('Could not save customer details.', 500)
+  }
+
   // ---- order number -------------------------------------------------------
   const { data: orderNumber, error: orderNumberError } = await db.rpc('generate_order_number')
   if (orderNumberError || !orderNumber) {
@@ -150,6 +233,7 @@ Deno.serve(async (req) => {
       coupon_id: couponId,
       discount_amount: discountAmount,
       total_amount: totalAmount,
+      idempotency_key: idempotency_key || null,
     })
     .select()
     .single()
@@ -161,7 +245,7 @@ Deno.serve(async (req) => {
 
   // ---- order items ------------------------------------------------------
   const { error: itemsError } = await db.from('order_items').insert(
-    items.map((i) => ({
+    resolvedItems.map((i) => ({
       order_id: order.id,
       menu_item_id: i.menu_item_id,
       name: i.name,
@@ -174,7 +258,6 @@ Deno.serve(async (req) => {
 
   if (itemsError) {
     console.error('order_items insert failed', itemsError)
-    // Best-effort cleanup so we don't leave an order with no items behind.
     await db.from('orders').delete().eq('id', order.id)
     return errorResponse('Could not save cart items.', 500)
   }
@@ -184,7 +267,6 @@ Deno.serve(async (req) => {
       p_coupon_id: couponId,
     })
     if (couponUsageError) {
-      // Non-fatal: the order still succeeds even if the usage counter didn't tick up.
       console.error('increment_coupon_usage failed', couponUsageError)
     }
   }
@@ -212,5 +294,6 @@ Deno.serve(async (req) => {
     discount_amount: discountAmount,
     total_amount: totalAmount,
     reference,
+    idempotent: false,
   })
 })

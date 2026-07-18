@@ -1,5 +1,4 @@
-// src/components/checkout/CheckoutModal.tsx
-import { useState, type FormEvent } from 'react'
+import { useState, useRef, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -20,6 +19,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
   const { lines, subtotal, clearCart } = useCart()
   const navigate = useNavigate()
 
+  const idempotencyKey = useRef(crypto.randomUUID())
   const [step, setStep] = useState<Step>('details')
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
@@ -32,6 +32,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
   function resetAndClose() {
     setStep('details')
     setFormError(null)
+    idempotencyKey.current = crypto.randomUUID()
     onClose()
   }
 
@@ -46,9 +47,6 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
     })
 
     if (!popupResult) {
-      // Popup closed / dismissed without completing — order stays
-      // pending_payment server-side, so this isn't an error state, just
-      // back to the form with a retry option.
       setStep('failed')
       return
     }
@@ -84,6 +82,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
           email: email.trim() || undefined,
           deliveryAddress: deliveryAddress.trim(),
           deliveryInstructions: deliveryInstructions.trim() || undefined,
+          idempotencyKey: idempotencyKey.current,
         },
         lines.map((l) => ({
           menu_item_id: l.id,
@@ -95,8 +94,6 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
       )
 
       setPendingOrder(order)
-      // Paystack requires an email — guests who skip it get a synthetic one
-      // tied to their phone number so it's still traceable if needed.
       const guestEmail = email.trim() || `${phone.trim()}@guest.SilentKrowd-lounge.com`
       await runPaystackAndVerify(order, guestEmail)
     } catch (err) {
