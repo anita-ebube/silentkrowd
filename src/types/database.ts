@@ -56,23 +56,6 @@ export interface Customer {
   updated_at: string
 }
 
-export interface Coupon {
-  id: string
-  code: string
-  discount_type: 'percentage' | 'fixed'
-  discount_value: number
-  max_discount: number | null
-  min_order_amount: number
-  usage_limit: number | null
-  times_used: number
-  active: boolean
-  starts_at: string | null
-  expires_at: string | null
-  created_by: string | null
-  created_at: string
-  updated_at: string
-}
-
 export interface Order {
   id: string
   order_number: string
@@ -83,7 +66,6 @@ export interface Order {
   delivery_instructions: string | null
   subtotal: number
   delivery_fee: number
-  coupon_id: string | null
   discount_amount: number
   total_amount: number
   cancelled_reason: string | null

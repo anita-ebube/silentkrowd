@@ -65,7 +65,7 @@ export default function ReservationsAdmin() {
             placeholder="Search by name, phone or email…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-72 border border-SilentKrowd-border bg-transparent px-3 py-2 text-sm text-SilentKrowd-white outline-none focus:border-SilentKrowd-gold/60"
+            className="w-full md:w-72 border border-SilentKrowd-border bg-transparent px-3 py-2 text-sm text-SilentKrowd-white outline-none focus:border-SilentKrowd-gold/60"
           />
         </form>
         <div className="flex gap-2">

@@ -6,7 +6,6 @@ import type {
   Profile,
   Customer,
   OrderWithItems,
-  Coupon,
   StaffActivityLog,
   Reservation,
   ReservationStatus,
@@ -208,41 +207,6 @@ export async function listCustomers({
 
   if (error) throw new Error(error.message)
   return { rows: (data ?? []) as Customer[], count: count ?? 0 }
-}
-
-// ---------------------------------------------------------------------------
-// Coupons (admin only)
-// ---------------------------------------------------------------------------
-
-export async function listCoupons(): Promise<Coupon[]> {
-  const { data, error } = await supabase.from('coupons').select('id, code, discount_type, discount_value, max_discount, min_order_amount, usage_limit, used_count, active, expires_at, created_at').order('created_at', { ascending: false })
-  if (error) throw new Error(error.message)
-  return (data ?? []) as unknown as Coupon[]
-}
-
-export interface CouponInput {
-  code: string
-  discount_type: 'percentage' | 'fixed'
-  discount_value: number
-  max_discount?: number | null
-  min_order_amount?: number
-  usage_limit?: number | null
-  expires_at?: string | null
-}
-
-export async function createCoupon(input: CouponInput): Promise<Coupon> {
-  const { data, error } = await supabase
-    .from('coupons')
-    .insert({ ...input, code: input.code.trim().toUpperCase() })
-    .select()
-    .single()
-  if (error) throw new Error(error.message)
-  return data as Coupon
-}
-
-export async function setCouponActive(couponId: string, active: boolean): Promise<void> {
-  const { error } = await supabase.from('coupons').update({ active }).eq('id', couponId)
-  if (error) throw new Error(error.message)
 }
 
 // ---------------------------------------------------------------------------

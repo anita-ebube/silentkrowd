@@ -8,7 +8,6 @@ export interface CheckoutDetails {
   email?: string
   deliveryAddress: string
   deliveryInstructions?: string
-  couponCode?: string
   idempotencyKey?: string
 }
 
@@ -25,7 +24,6 @@ export interface CreateOrderResult {
   order_number: string
   subtotal: number
   delivery_fee: number
-  discount_amount: number
   total_amount: number
   reference: string
   idempotent?: boolean
@@ -41,7 +39,6 @@ export async function createOrder(
     email: details.email || undefined,
     delivery_address: details.deliveryAddress,
     delivery_instructions: details.deliveryInstructions || undefined,
-    coupon_code: details.couponCode || undefined,
     idempotency_key: details.idempotencyKey || undefined,
     items,
   })

@@ -21,7 +21,6 @@ const AdminDashboard = lazy(() => import('@/pages/admin/Dashboard'))
 const AdminOrders = lazy(() => import('@/pages/admin/Orders'))
 const AdminCustomers = lazy(() => import('@/pages/admin/Customers'))
 const AdminStaff = lazy(() => import('@/pages/admin/Staff'))
-const AdminCoupons = lazy(() => import('@/pages/admin/Coupons'))
 const AdminSettings = lazy(() => import('@/pages/admin/Settings'))
 const AdminReservations = lazy(() => import('@/pages/admin/Reservations'))
 const AdminMessages = lazy(() => import('@/pages/admin/Messages'))
@@ -105,16 +104,6 @@ function AnimatedRoutes() {
               <ProtectedRoute requireRole="admin">
                 <PageTransition>
                   <AdminStaff />
-                </PageTransition>
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/admin/coupons"
-            element={
-              <ProtectedRoute requireRole="admin">
-                <PageTransition>
-                  <AdminCoupons />
                 </PageTransition>
               </ProtectedRoute>
             }

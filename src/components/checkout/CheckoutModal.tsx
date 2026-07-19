@@ -115,7 +115,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
             <h2 className="mb-1 font-serif text-2xl text-SilentKrowd-white">Checkout</h2>
             <p className="mb-6 text-sm text-SilentKrowd-muted">
               Subtotal: <span className="text-SilentKrowd-gold">{formatNaira(subtotal)}</span> ·
-              Delivery fee calculated at checkout
+              Delivery fee: <span className="text-SilentKrowd-gold">₦7,000</span>
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

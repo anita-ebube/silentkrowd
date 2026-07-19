@@ -164,12 +164,6 @@ export function OrderDetailModal({
                 <span>Delivery Fee</span>
                 <span>{formatNaira(order.delivery_fee)}</span>
               </div>
-              {order.discount_amount > 0 && (
-                <div className="flex justify-between text-sm text-SilentKrowd-muted">
-                  <span>Discount</span>
-                  <span>-{formatNaira(order.discount_amount)}</span>
-                </div>
-              )}
               <div className="flex justify-between font-serif text-lg text-SilentKrowd-white">
                 <span>Total</span>
                 <span>{formatNaira(order.total_amount)}</span>

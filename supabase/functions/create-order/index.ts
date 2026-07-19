@@ -29,9 +29,8 @@ interface CheckoutPayload {
   email?: string
   delivery_address: string
   delivery_instructions?: string
-  coupon_code?: string
   idempotency_key?: string
-  items: ClientItem[]
+  items: ClientItem
 }
 
 interface ResolvedItem {
@@ -57,7 +56,7 @@ Deno.serve(async (req) => {
     return errorResponse('Invalid JSON body')
   }
 
-  const { full_name, phone, email, delivery_address, delivery_instructions, coupon_code, idempotency_key, items } =
+  const { full_name, phone, email, delivery_address, delivery_instructions, idempotency_key, items } =
     payload
 
   // ---- validation -----------------------------------------------------
@@ -97,7 +96,6 @@ Deno.serve(async (req) => {
         order_number: existingOrder.order_number,
         subtotal: existingOrder.subtotal,
         delivery_fee: existingOrder.delivery_fee,
-        discount_amount: existingOrder.discount_amount,
         total_amount: existingOrder.total_amount,
         reference: existingPayment?.reference,
         idempotent: true,
@@ -162,41 +160,7 @@ Deno.serve(async (req) => {
   const { data: feeRow } = await db.from('settings').select('value').eq('key', 'delivery_fee').single()
   const deliveryFee = typeof feeRow?.value === 'number' ? feeRow.value : 7000
 
-  let discountAmount = 0
-  let couponId: string | null = null
-
-  if (coupon_code?.trim()) {
-    const { data: coupon } = await db
-      .from('coupons')
-      .select('*')
-      .eq('code', coupon_code.trim().toUpperCase())
-      .eq('active', true)
-      .maybeSingle()
-
-    if (coupon) {
-      const now = new Date()
-      const withinWindow =
-        (!coupon.starts_at || new Date(coupon.starts_at) <= now) &&
-        (!coupon.expires_at || new Date(coupon.expires_at) >= now)
-      const withinUsage = !coupon.usage_limit || coupon.times_used < coupon.usage_limit
-      const meetsMinimum = subtotal >= Number(coupon.min_order_amount)
-
-      if (withinWindow && withinUsage && meetsMinimum) {
-        discountAmount =
-          coupon.discount_type === 'percentage'
-            ? (subtotal * Number(coupon.discount_value)) / 100
-            : Number(coupon.discount_value)
-
-        if (coupon.max_discount) {
-          discountAmount = Math.min(discountAmount, Number(coupon.max_discount))
-        }
-        discountAmount = Math.min(discountAmount, subtotal)
-        couponId = coupon.id
-      }
-    }
-  }
-
-  const totalAmount = Math.max(subtotal + deliveryFee - discountAmount, 0)
+  const totalAmount = subtotal + deliveryFee
 
   // ---- upsert guest customer -------------------------------------------
   const { data: customer, error: customerError } = await db
@@ -230,8 +194,7 @@ Deno.serve(async (req) => {
       delivery_instructions: delivery_instructions?.trim() || null,
       subtotal,
       delivery_fee: deliveryFee,
-      coupon_id: couponId,
-      discount_amount: discountAmount,
+      discount_amount: 0,
       total_amount: totalAmount,
       idempotency_key: idempotency_key || null,
     })
@@ -262,15 +225,6 @@ Deno.serve(async (req) => {
     return errorResponse('Could not save cart items.', 500)
   }
 
-  if (couponId) {
-    const { error: couponUsageError } = await db.rpc('increment_coupon_usage', {
-      p_coupon_id: couponId,
-    })
-    if (couponUsageError) {
-      console.error('increment_coupon_usage failed', couponUsageError)
-    }
-  }
-
   // ---- pending payment row ----------------------------------------------
   const reference = `SK-PAY-${order.order_number}-${crypto.randomUUID().slice(0, 8)}`
 
@@ -291,7 +245,6 @@ Deno.serve(async (req) => {
     order_number: order.order_number,
     subtotal,
     delivery_fee: deliveryFee,
-    discount_amount: discountAmount,
     total_amount: totalAmount,
     reference,
     idempotent: false,
