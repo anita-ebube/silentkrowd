@@ -1,20 +1,20 @@
-import { memo, useDeferredValue, useMemo, useState } from 'react'
+import { memo, useDeferredValue, useEffect, useMemo, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Heart, SearchX } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { MenuItemModal } from '@/components/ui/MenuItemModal'
 import { menuData, categories, type MenuCategory, type MenuItem } from '@/data/menu'
 import { useCart } from '@/context/CartContext'
+import { supabase } from '@/lib/supabase'
 import { cn } from '@/utils/cn'
 
 /* ───────────────────────── Image relevance helper ───────────────────────── */
 
 const CATEGORY_FALLBACK: Record<MenuCategory, string> = {
-  food: 'gourmet,plate',
+  starters: 'appetizer,salad',
+  main_dishes: 'gourmet,plate',
+  proteins: 'grilled,meat',
   drinks: 'cocktail,drink',
-  wine: 'wine,glass',
-  spirits: 'whiskey,bottle',
-  desserts: 'dessert,cake',
 }
 
 const KEYWORD_BANK = [
@@ -35,17 +35,19 @@ function getImageKeywords(item: MenuItem) {
 }
 
 function getImageUrl(item: MenuItem) {
+  if (item.img && !item.img.startsWith('/src/assets')) {
+    return item.img
+  }
   return `https://loremflickr.com/500/500/${getImageKeywords(item)}?lock=${item.id}`
 }
 
 /* ───────────────────────── Shared animation variants ───────────────────────── */
 
 const blurRevealVariants = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(10px)' },
+  hidden: { opacity: 0, y: 24 },
   show: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { type: 'spring', stiffness: 140, damping: 20 },
   },
 }
@@ -56,12 +58,11 @@ const staggerContainer = (stagger = 0.08, delay = 0) => ({
 })
 
 const cardVariants = {
-  hidden: { opacity: 0, y: 32, scale: 0.94, filter: 'blur(10px)' },
+  hidden: { opacity: 0, y: 32, scale: 0.94 },
   show: {
     opacity: 1,
     y: 0,
     scale: 1,
-    filter: 'blur(0px)',
     transition: { type: 'spring', stiffness: 130, damping: 18 },
   },
 }
@@ -89,10 +90,10 @@ const MenuCard = memo(function MenuCard({
       variants={cardVariants}
       initial="hidden"
       animate="show"
-      exit={{ opacity: 0, y: -12, filter: 'blur(6px)' }}
+      exit={{ opacity: 0, y: -12 }}
       whileHover={{ y: -6, transition: { type: 'spring', stiffness: 260, damping: 20 } }}
       style={{ transitionDelay: `${(index % 4) * 0.05}s` }}
-      className="group relative flex flex-col overflow-hidden rounded-2xl border border-SilentKrowd-border bg-SilentKrowd-glass shadow-lg shadow-black/20 transition-shadow duration-500 hover:shadow-2xl hover:shadow-SilentKrowd-gold/10"
+      className="will-change-transform group relative flex flex-col overflow-hidden rounded-2xl border border-SilentKrowd-border bg-SilentKrowd-glass shadow-lg shadow-black/20 transition-shadow duration-500 hover:shadow-2xl hover:shadow-SilentKrowd-gold/10"
     >
       {/* Image */}
       <div
@@ -170,21 +171,48 @@ const MenuCard = memo(function MenuCard({
 /* ───────────────────────── Page ───────────────────────── */
 
 export default function Menu() {
-  const [category, setCategory] = useState<MenuCategory | 'food'>('food')
+  const [category, setCategory] = useState<MenuCategory>('starters')
   const [search, setSearch] = useState('')
   const deferredSearch = useDeferredValue(search)
   const [detail, setDetail] = useState<MenuItem | null>(null)
   const [favorites, setFavorites] = useState<Set<number>>(new Set())
+  const [remoteItems, setRemoteItems] = useState<MenuItem[] | null>(null)
   const { addItem } = useCart()
 
- const items = useMemo(() => {
-  const q = deferredSearch.toLowerCase()
-  return menuData.filter((item) => {
-    const matchesCategory = item.category === category
-    const matchesSearch = !q || item.name.toLowerCase().includes(q) || item.category.includes(q)
-    return matchesCategory && matchesSearch
-  })
-}, [category, deferredSearch])
+  useEffect(() => {
+    async function loadMenu() {
+      try {
+        const { data, error } = await supabase
+          .from('menu_items')
+          .select('id, name, category, price, image')
+          .eq('active', true)
+          .order('id', { ascending: true })
+        if (!error && data && data.length > 0) {
+          setRemoteItems(data.map((row) => ({
+            id: row.id,
+            name: row.name,
+            category: row.category as MenuCategory,
+            price: row.price,
+            img: row.image ?? '',
+          })))
+        }
+      } catch {
+        // Keep local data
+      }
+    }
+    loadMenu()
+  }, [])
+
+  const activeData = remoteItems ?? menuData
+
+  const items = useMemo(() => {
+    const q = deferredSearch.toLowerCase()
+    return activeData.filter((item) => {
+      const matchesCategory = item.category === category
+      const matchesSearch = !q || item.name.toLowerCase().includes(q) || item.category.includes(q)
+      return matchesCategory && matchesSearch
+    })
+  }, [category, deferredSearch, activeData])
 
   function toggleFav(id: number) {
     setFavorites((prev) => {
@@ -254,8 +282,8 @@ export default function Menu() {
       <Container>
         {items.length === 0 ? (
           <motion.div
-            initial={{ opacity: 0, y: 12, filter: 'blur(8px)' }}
-            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
             className="flex flex-col items-center py-20 text-center"
           >
             <SearchX size={48} className="mb-4 text-SilentKrowd-muted/30" />

@@ -46,7 +46,7 @@ export function Navbar() {
             <img
               src={logo}
               alt="SilentKrowd logo"
-              className="h-20 w-auto max-h-20 object-contain transform scale-110 origin-left"
+              className="h-24 w-auto max-h-24 object-contain transform scale-110 origin-left"
             />
           </Link>
 

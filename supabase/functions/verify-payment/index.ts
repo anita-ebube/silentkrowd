@@ -53,6 +53,22 @@ Deno.serve(async (req) => {
     return jsonResponse({ status: 'success', order })
   }
 
+  // The paystack-webhook may have just processed this payment but the DB
+  // read above raced ahead of it. Poll a few times with short delays to
+  // give the webhook a chance, avoiding an expensive Paystack API call.
+  for (let i = 0; i < 5; i++) {
+    await new Promise((r) => setTimeout(r, 400))
+    const { data: refreshed } = await db
+      .from('payments')
+      .select('status')
+      .eq('id', payment.id)
+      .maybeSingle()
+    if (refreshed?.status === 'success') {
+      const { data: order } = await db.from('orders').select('*').eq('id', order_id).single()
+      return jsonResponse({ status: 'success', order })
+    }
+  }
+
   // ---- call Paystack ------------------------------------------------------
   const paystackRes = await fetch(
     `https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`,

@@ -72,7 +72,7 @@ export function Hero() {
             transition={{ duration: 0.9, delay: 0.24, ease: [0.19, 1, 0.22, 1] }}
             className="font-serif text-xl italic text-SilentKrowd-white/60 md:text-2xl"
           >
-            Where the night comes alive
+            Luxury meets Lifestyle
           </motion.p>
         </div>
         <motion.div

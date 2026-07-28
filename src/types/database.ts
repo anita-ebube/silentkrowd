@@ -8,7 +8,7 @@
 export type AppRole = 'admin' | 'staff'
 export type StaffStatus = 'active' | 'suspended'
 
-export type MenuCategory = 'food' | 'drinks' | 'wine' | 'spirits' | 'desserts'
+export type MenuCategory = 'starters' | 'main_dishes' | 'proteins' | 'drinks'
 
 export type OrderStatus =
   | 'pending_payment'
@@ -165,4 +165,12 @@ export interface ContactMessage {
   message: string
   read: boolean
   created_at: string
+}
+
+export interface GalleryImage {
+  id: string
+  src: string
+  sort_order: number
+  created_at: string
+  updated_at: string
 }

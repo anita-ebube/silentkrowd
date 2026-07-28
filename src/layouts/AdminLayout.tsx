@@ -1,7 +1,8 @@
 // src/layouts/AdminLayout.tsx
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
-import { LayoutDashboard, ShoppingBag, Users, UserCog, Calendar, Mail, Settings as SettingsIcon, LogOut, Menu, X } from 'lucide-react'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
+import { LayoutDashboard, ShoppingBag, Users, UserCog, Calendar, Mail, ImageIcon, UtensilsCrossed, Settings as SettingsIcon, LogOut, Menu, X } from 'lucide-react'
 import { useAuth } from '@/context/AuthContext'
 import { cn } from '@/utils/cn'
 
@@ -19,12 +20,15 @@ const NAV_ITEMS: NavItem[] = [
   { to: '/admin/customers', label: 'Customers', icon: Users },
   { to: '/admin/reservations', label: 'Reservations', icon: Calendar },
   { to: '/admin/messages', label: 'Messages', icon: Mail },
+  { to: '/admin/gallery', label: 'Gallery', icon: ImageIcon },
+  { to: '/admin/menu', label: 'Menu', icon: UtensilsCrossed },
   { to: '/admin/staff', label: 'Staff', icon: UserCog, adminOnly: true },
   { to: '/admin/settings', label: 'Settings', icon: SettingsIcon, adminOnly: true },
 ]
 
 export function AdminLayout() {
   const { profile, isAdmin, signOut } = useAuth()
+  const location = useLocation()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
   const visibleItems = NAV_ITEMS.filter((item) => !item.adminOnly || isAdmin)
@@ -97,7 +101,14 @@ export function AdminLayout() {
       </aside>
 
       <main className="flex-1 overflow-x-hidden px-4 pt-16 md:px-8 md:pt-10">
-        <Outlet />
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
+        >
+          <Outlet />
+        </motion.div>
       </main>
     </div>
   )

@@ -94,6 +94,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
       )
 
       setPendingOrder(order)
+      clearCart()
       const guestEmail = email.trim() || `${phone.trim()}@guest.SilentKrowd-lounge.com`
       await runPaystackAndVerify(order, guestEmail)
     } catch (err) {

@@ -5,9 +5,6 @@ import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
 
-const partySizes = ['1', '2', '3', '4', '5', '6', '7+']
-const times = ['6:00 PM', '7:00 PM', '8:00 PM', '9:00 PM', '10:00 PM']
-
 export default function Reservations() {
   const [submitted, setSubmitted] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -92,25 +89,19 @@ export default function Reservations() {
               <Field label="Date" name="date" type="date" required />
             </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-              <div>
-                <label className="mb-2 block text-[0.65rem] uppercase tracking-[0.15em] text-SilentKrowd-muted">
-                  Party size
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {partySizes.map((size) => (
-                    <PillOption key={size} name="partySize" value={size} />
-                  ))}
-                </div>
-              </div>
+              <Field label="Party size" name="partySize" type="number" min="1" />
               <div>
                 <label className="mb-2 block text-[0.65rem] uppercase tracking-[0.15em] text-SilentKrowd-muted">
                   Preferred time
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {times.map((time) => (
-                    <PillOption key={time} name="time" value={time} />
-                  ))}
-                </div>
+                <input
+                  type="time"
+                  name="time"
+                  min="11:00"
+                  max="23:00"
+                  required
+                  className="w-full rounded-sm border border-SilentKrowd-border bg-SilentKrowd-black/40 p-4 text-sm font-light text-SilentKrowd-white transition-colors focus:border-SilentKrowd-gold/30 focus:outline-none [color-scheme:dark]"
+                />
               </div>
             </div>
             <div>
@@ -134,27 +125,17 @@ export default function Reservations() {
   )
 }
 
-function Field({ label, name, type, required }: { label: string; name: string; type: string; required?: boolean }) {
+function Field({ label, name, type, required, min }: { label: string; name: string; type: string; required?: boolean; min?: string }) {
   return (
     <div>
       <label className="mb-2 block text-[0.65rem] uppercase tracking-[0.15em] text-SilentKrowd-muted">{label}</label>
       <input
         type={type}
         name={name}
+        min={min}
         required={required}
-        className="w-full rounded-sm border border-SilentKrowd-border bg-SilentKrowd-black/40 p-4 text-sm font-light text-SilentKrowd-white transition-colors focus:border-SilentKrowd-gold/30 focus:outline-none"
+        className="w-full rounded-sm border border-SilentKrowd-border bg-SilentKrowd-black/40 p-4 text-sm font-light text-SilentKrowd-white transition-colors focus:border-SilentKrowd-gold/30 focus:outline-none [color-scheme:dark]"
       />
     </div>
-  )
-}
-
-function PillOption({ name, value }: { name: string; value: string }) {
-  return (
-    <label className="cursor-pointer">
-      <input type="radio" name={name} value={value} className="peer sr-only" required />
-      <span className="block border border-SilentKrowd-border px-4 py-2 text-xs text-SilentKrowd-muted transition-colors peer-checked:border-SilentKrowd-gold/40 peer-checked:bg-SilentKrowd-gold/[0.08] peer-checked:text-SilentKrowd-gold hover:border-SilentKrowd-gold/30">
-        {value}
-      </span>
-    </label>
   )
 }

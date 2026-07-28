@@ -3,9 +3,8 @@ import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 
 const stats = [
-  { value: 'Tue–Sun', label: 'Open Days' },
-  { value: '6PM – 3AM', label: 'Hours' },
-  { value: '42', label: 'Seats' },
+  { value: 'Monday–Sunday', label: 'Open Days' },
+  { value: '11am – 11pm', label: 'Hours' },
 ]
 
 export function Reservation() {

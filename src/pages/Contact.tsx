@@ -10,7 +10,7 @@ const details = [
   { icon: MapPin, label: 'Address', value: 'Along Aka Avenue Off Jakpa/Refinery Road' },
   { icon: Phone, label: 'Phone', value: '(+234)7016913087' },
   { icon: Mail, label: 'Email', value: 'silentkrowd@gmail.com' },
-  { icon: Clock, label: 'Hours', value: 'Tue–Sun, 6PM – 3AM · Closed Mondays' },
+  { icon: Clock, label: 'Hours', value: 'Monday–Sunday, 11am – 11pm ' },
 ]
 
 export default function Contact() {

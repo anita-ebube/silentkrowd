@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef, useState } from 'react'
+import { memo, useEffect, useRef, useState, useMemo } from 'react'
 import {
   motion,
   AnimatePresence,
@@ -11,6 +11,7 @@ import { X, ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Container } from '@/components/ui/Container'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
+import { supabase } from '@/lib/supabase'
 
 import galleryImg1 from '@/assets/home/outdoor.jpg'
 import galleryImg2 from '@/assets/home/IMG_3095.jpg'
@@ -31,12 +32,12 @@ import galleryImg16 from '@/assets/home/IMG_0803.JPG.jpg'
 import featuredImg from '@/assets/home/cocktail.jpg'
 
 type GalleryImage = {
-  id: number
+  id: number | string
   src: string
   caption: string
 }
 
-const galleryImages: GalleryImage[] = [
+const fallbackImages: GalleryImage[] = [
   { id: 1, src: galleryImg1, caption: 'The Pool Cabana' },
   { id: 2, src: galleryImg2, caption: 'Crispy Bites' },
   { id: 3, src: galleryImg3, caption: 'Poolside Gathering' },
@@ -55,23 +56,17 @@ const galleryImages: GalleryImage[] = [
   { id: 16, src: galleryImg16, caption: 'Golden Hour' },
 ]
 
-const featured = {
-  src: featuredImg,
-  heading: 'A World Apart',
-  description:
-    'Cabanas draped in white linen, the pool catching the last light of day — SilentKrowd was built for evenings that linger.',
-}
+
 
 
 
 /* ───────────────────────── Shared animation variants ───────────────────────── */
 
 const blurRevealVariants = {
-  hidden: { opacity: 0, y: 24, filter: 'blur(10px)' },
+  hidden: { opacity: 0, y: 24 },
   show: {
     opacity: 1,
     y: 0,
-    filter: 'blur(0px)',
     transition: { type: 'spring', stiffness: 140, damping: 20 },
   },
 }
@@ -82,17 +77,6 @@ const staggerContainer = (stagger = 0.1, delay = 0) => ({
     transition: { staggerChildren: stagger, delayChildren: delay },
   },
 })
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 40, scale: 0.92, filter: 'blur(14px)' },
-  show: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    filter: 'blur(0px)',
-    transition: { type: 'spring', stiffness: 120, damping: 18 },
-  },
-}
 
 
 
@@ -146,14 +130,16 @@ const GalleryCard = memo(function GalleryCard({
       ref={cardRef}
       layoutId={`gallery-image-${item.id}`}
       data-cursor-hover
-      variants={cardVariants}
+      initial={{ opacity: 0, y: 24 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      transition={{ type: 'spring', stiffness: 120, damping: 18, delay: (index % 4) * 0.06 }}
       whileHover={{
         y: -10,
         rotate: 2,
         transition: { type: 'spring', stiffness: 260, damping: 20 },
       }}
       onClick={onOpen}
-      style={{ transitionDelay: `${(index % 4) * 0.06}s` }}
       className={`group relative block aspect-[4/5] w-full origin-bottom overflow-hidden rounded-xl border border-SilentKrowd-border/60 shadow-lg shadow-black/20 transition-shadow duration-500 will-change-transform hover:z-10 hover:shadow-2xl hover:shadow-SilentKrowd-gold/20`}
     >
       {/* Scroll-linked parallax/zoom wrapper */}
@@ -189,7 +175,39 @@ const GalleryCard = memo(function GalleryCard({
 
 export default function Gallery() {
   const [activeIndex, setActiveIndex] = useState<number | null>(null)
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(fallbackImages)
+  const [visibleCount, setVisibleCount] = useState(8)
+  const PAGE_SIZE = 8
   useLockBodyScroll(activeIndex !== null)
+
+  useEffect(() => {
+    async function loadGallery() {
+      try {
+        const { data, error } = await supabase
+          .from('gallery_images')
+          .select('id, src')
+          .order('sort_order', { ascending: true })
+        if (!error && data && data.length > 0) {
+          const supabaseImages: GalleryImage[] = data.map((img) => ({
+            id: img.id,
+            src: img.src,
+            caption: '',
+          }))
+          setGalleryImages((prev) => {
+            const supabaseSrcs = new Set(supabaseImages.map((img) => img.src))
+            const uniqueFallbacks = prev.filter((img) => !supabaseSrcs.has(img.src))
+            return [...supabaseImages, ...uniqueFallbacks]
+          })
+        }
+      } catch (err) {
+        console.error('Failed to load gallery images from Supabase:', err)
+      }
+    }
+    loadGallery()
+  }, [])
+
+  const visibleImages = useMemo(() => galleryImages.slice(0, visibleCount), [galleryImages, visibleCount])
+  const hasMore = visibleCount < galleryImages.length
 
   const heroRef = useRef<HTMLDivElement>(null)
   const { scrollYProgress: heroProgress } = useScroll({ target: heroRef, offset: ['start start', 'end start'] })
@@ -250,10 +268,10 @@ export default function Gallery() {
 
       {/* Grain overlay */}
       <div
-        className="pointer-events-none fixed inset-0 z-0 opacity-[0.04] mix-blend-overlay"
+        className="pointer-events-none fixed inset-0 z-0 opacity-[0.3] mix-blend-overlay"
         style={{
-          backgroundImage:
-            "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E\")",
+          background:
+            "radial-gradient(ellipse at 20% 50%, rgba(201, 169, 110, 0.03) 0%, transparent 50%), radial-gradient(ellipse at 80% 20%, rgba(255, 255, 255, 0.02) 0%, transparent 50%), radial-gradient(ellipse at 50% 80%, rgba(201, 169, 110, 0.02) 0%, transparent 50%)",
         }}
       />
 
@@ -321,68 +339,32 @@ export default function Gallery() {
         </motion.div>
       </div>
 
-      {/* ───────────── FEATURED IMAGE (parallax + zoom on scroll) ───────────── */}
-      <div ref={featuredRef} className="relative z-10 mb-28">
-        <Container>
-          <motion.div
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-100px' }}
-            variants={blurRevealVariants}
-            transition={{ duration: 0.9, ease: 'easeOut' }}
-            className="relative h-[420px] overflow-hidden rounded-2xl md:h-[560px]"
-          >
-            <motion.img
-              style={{ y: featuredImgY, scale: featuredImgScale }}
-              src={featured.src}
-              alt={featured.heading}
-              className="absolute inset-0 h-[130%] w-full object-cover brightness-[0.55]"
-            />
-            <div className="absolute inset-0 " />
-            <motion.div
-              variants={staggerContainer(0.1, 0.1)}
-              initial="hidden"
-              whileInView="show"
-              viewport={{ once: true, margin: '-100px' }}
-              className="absolute inset-x-0 bottom-0 p-8 md:p-14"
-            >
-              <motion.span
-                variants={blurRevealVariants}
-                className="mb-3 block text-[0.6rem] uppercase tracking-[0.35em] text-SilentKrowd-gold"
-              >
-                Featured
-              </motion.span>
-              <motion.h2
-                variants={blurRevealVariants}
-                className="max-w-xl font-serif text-3xl text-SilentKrowd-white md:text-5xl"
-              >
-                {featured.heading}
-              </motion.h2>
-              <motion.p
-                variants={blurRevealVariants}
-                className="mt-4 max-w-md text-sm font-light leading-relaxed text-SilentKrowd-muted md:text-base"
-              >
-                {featured.description}
-              </motion.p>
-            </motion.div>
-          </motion.div>
-        </Container>
-      </div>
 
-      {/* ───────────── BENTO GALLERY (stagger reveal) ───────────── */}
+      {/* ───────────── BENTO GALLERY ───────────── */}
       <div className="relative z-10">
         <Container>
-          <motion.div
-            variants={staggerContainer(0.08)}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, margin: '-60px' }}
-            className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6"
-          >
-            {galleryImages.map((item, i) => (
-              <GalleryCard key={item.id} item={item} index={i} onOpen={() => setActiveIndex(i)} />
+          <div className="grid grid-cols-2 gap-4 md:grid-cols-4 md:gap-6">
+            {visibleImages.map((item) => (
+              <GalleryCard
+                key={item.id}
+                item={item}
+                index={galleryImages.indexOf(item)}
+                onOpen={() => setActiveIndex(galleryImages.indexOf(item))}
+              />
             ))}
-          </motion.div>
+          </div>
+
+          {hasMore && (
+            <div className="mt-12 flex justify-center">
+              <button
+                onClick={() => setVisibleCount((prev) => prev + PAGE_SIZE)}
+                className="flex items-center gap-2 rounded-full border border-SilentKrowd-border px-8 py-3 text-xs uppercase tracking-[0.2em] text-SilentKrowd-muted transition-all hover:border-SilentKrowd-gold/40 hover:text-SilentKrowd-gold"
+              >
+                Load More
+                <ChevronDown size={14} />
+              </button>
+            </div>
+          )}
         </Container>
       </div>
 

@@ -15,7 +15,7 @@ export function Moments() {
             </h2>
           </div>
           <a
-            href="https://instagram.com"
+            href="https://www.instagram.com/silent.krowdluxury_/"
             target="_blank"
             rel="noreferrer"
             className="inline-flex w-fit items-center gap-2 border border-SilentKrowd-gold/40 px-5 py-3 text-[0.65rem] uppercase tracking-[0.2em] text-SilentKrowd-gold transition-colors hover:bg-SilentKrowd-gold hover:text-SilentKrowd-black"

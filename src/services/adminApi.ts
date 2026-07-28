@@ -367,3 +367,252 @@ export async function deleteContactMessage(id: string): Promise<void> {
   const { error } = await supabase.from('contact_messages').delete().eq('id', id)
   if (error) throw new Error(error.message)
 }
+
+// ---------------------------------------------------------------------------
+// Gallery Images
+// ---------------------------------------------------------------------------
+
+export interface GalleryImage {
+  id: string
+  src: string
+  sort_order: number
+  created_at: string
+  updated_at: string
+}
+
+export async function listGalleryImages(): Promise<GalleryImage[]> {
+  const { data, error } = await supabase
+    .from('gallery_images')
+    .select('id, src, sort_order, created_at, updated_at')
+    .order('sort_order', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as GalleryImage[]
+}
+
+export async function uploadGalleryImage(file: File): Promise<GalleryImage> {
+  const fileExt = file.name.split('.').pop() ?? 'jpg'
+  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
+  const filePath = `gallery/${fileName}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('gallery-images')
+    .upload(filePath, file, { upsert: false })
+
+  if (uploadError) throw new Error(uploadError.message)
+
+  const { data: urlData } = supabase.storage
+    .from('gallery-images')
+    .getPublicUrl(filePath)
+
+  // Get current max sort_order
+  const { data: maxRow } = await supabase
+    .from('gallery_images')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const nextOrder = (maxRow?.sort_order ?? -1) + 1
+
+  const { data, error } = await supabase
+    .from('gallery_images')
+    .insert({ src: urlData.publicUrl, sort_order: nextOrder })
+    .select('id, src, sort_order, created_at, updated_at')
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as GalleryImage
+}
+
+export async function updateGalleryImage(
+  id: string,
+  updates: Partial<Pick<GalleryImage, 'sort_order'>>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('gallery_images')
+    .update(updates)
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteGalleryImage(id: string): Promise<void> {
+  // Get the image first to find the storage path
+  const { data: img, error: fetchError } = await supabase
+    .from('gallery_images')
+    .select('src')
+    .eq('id', id)
+    .single()
+
+  if (fetchError) throw new Error(fetchError.message)
+
+  // Delete from storage
+  const urlParts = img.src.split('/')
+  const storagePath = urlParts.slice(urlParts.indexOf('gallery')).join('/')
+
+  await supabase.storage.from('gallery-images').remove([storagePath])
+
+  // Delete from table
+  const { error } = await supabase.from('gallery_images').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function reorderGalleryImages(
+  orderedIds: string[],
+): Promise<void> {
+  const updates = orderedIds.map((id, index) =>
+    supabase.from('gallery_images').update({ sort_order: index }).eq('id', id),
+  )
+
+  const results = await Promise.all(updates)
+  const firstError = results.find((r) => r.error)
+  if (firstError) throw new Error(firstError.error!.message)
+}
+
+// ---------------------------------------------------------------------------
+// Menu Items
+// ---------------------------------------------------------------------------
+
+export interface MenuItemRow {
+  id: number
+  name: string
+  category: string
+  price: number
+  image: string | null
+  active: boolean
+  created_at: string
+}
+
+export async function listMenuItems(): Promise<MenuItemRow[]> {
+  const { data, error } = await supabase
+    .from('menu_items')
+    .select('id, name, category, price, image, active, created_at')
+    .order('id', { ascending: true })
+
+  if (error) throw new Error(error.message)
+  return (data ?? []) as MenuItemRow[]
+}
+
+export async function createMenuItem(
+  name: string,
+  category: string,
+  price: number,
+  file?: File | null,
+): Promise<MenuItemRow> {
+  if (file && file.size > 1 * 1024 * 1024) {
+    throw new Error('Image must be under 1 MB.')
+  }
+
+  let image: string | null = null
+
+  if (file) {
+    const fileExt = file.name.split('.').pop() ?? 'jpg'
+    const fileName = `menu/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('menu-images')
+      .upload(fileName, file, { upsert: false })
+
+    if (uploadError) throw new Error(uploadError.message)
+
+    const { data: urlData } = supabase.storage
+      .from('menu-images')
+      .getPublicUrl(fileName)
+
+    image = urlData.publicUrl
+  }
+
+  // Get next id
+  const { data: maxRow } = await supabase
+    .from('menu_items')
+    .select('id')
+    .order('id', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  const nextId = (maxRow?.id ?? 160) + 1
+
+  const { data, error } = await supabase
+    .from('menu_items')
+    .insert({ id: nextId, name, category, price, image, active: true })
+    .select('id, name, category, price, image, active, created_at')
+    .single()
+
+  if (error) throw new Error(error.message)
+  return data as MenuItemRow
+}
+
+export async function updateMenuItem(
+  id: number,
+  updates: Partial<Pick<MenuItemRow, 'name' | 'category' | 'price' | 'active'>>,
+): Promise<void> {
+  const { error } = await supabase
+    .from('menu_items')
+    .update(updates)
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+}
+
+export async function deleteMenuItem(id: number): Promise<void> {
+  const { data: item, error: fetchError } = await supabase
+    .from('menu_items')
+    .select('image')
+    .eq('id', id)
+    .single()
+
+  if (fetchError) throw new Error(fetchError.message)
+
+  // Delete from storage if image exists
+  if (item.image) {
+    const urlParts = item.image.split('/')
+    const storagePath = urlParts.slice(urlParts.indexOf('menu')).join('/')
+    await supabase.storage.from('menu-images').remove([storagePath])
+  }
+
+  const { error } = await supabase.from('menu_items').delete().eq('id', id)
+  if (error) throw new Error(error.message)
+}
+
+export async function updateMenuItemImage(
+  id: number,
+  file: File,
+): Promise<string> {
+  // Delete old image if exists
+  const { data: item } = await supabase
+    .from('menu_items')
+    .select('image')
+    .eq('id', id)
+    .single()
+
+  if (item?.image) {
+    const urlParts = item.image.split('/')
+    const storagePath = urlParts.slice(urlParts.indexOf('menu')).join('/')
+    await supabase.storage.from('menu-images').remove([storagePath])
+  }
+
+  const fileExt = file.name.split('.').pop() ?? 'jpg'
+  const fileName = `menu/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('menu-images')
+    .upload(fileName, file, { upsert: false })
+
+  if (uploadError) throw new Error(uploadError.message)
+
+  const { data: urlData } = supabase.storage
+    .from('menu-images')
+    .getPublicUrl(fileName)
+
+  const imageUrl = urlData.publicUrl
+
+  const { error } = await supabase
+    .from('menu_items')
+    .update({ image: imageUrl })
+    .eq('id', id)
+
+  if (error) throw new Error(error.message)
+
+  return imageUrl
+}

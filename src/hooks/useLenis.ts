@@ -4,7 +4,8 @@ import Lenis from 'lenis'
 export function useLenis() {
   useEffect(() => {
     const prefersReduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    if (prefersReduced) return
+    const isLowPower = navigator.hardwareConcurrency <= 4
+    if (prefersReduced || isLowPower) return
 
     const lenis = new Lenis({
       duration: 1.1,

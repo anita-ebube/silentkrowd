@@ -148,7 +148,7 @@ Deno.serve(async (req) => {
     resolvedItems = items.map((item) => ({
       menu_item_id: item.menu_item_id,
       name: item.name || `Item ${item.menu_item_id}`,
-      category: item.category || 'food',
+      category: item.category || 'main_dishes',
       unit_price: item.unit_price!,
       quantity: item.quantity,
     }))

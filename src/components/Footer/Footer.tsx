@@ -3,10 +3,7 @@ import { Instagram, Facebook, Twitter } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 
 const hours = [
-  ['Tue – Thu', '6PM – 1AM'],
-  ['Fri – Sat', '6PM – 3AM'],
-  ['Sunday', '6PM – 12AM'],
-  ['Monday', 'Closed'],
+  ['Monday–Sunday', '11am – 11pm'],
 ]
 
 export function Footer() {
