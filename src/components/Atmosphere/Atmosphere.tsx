@@ -91,7 +91,7 @@ export function Atmosphere() {
               03 — Nightlife
             </span>
             <h2 className="max-w-3xl font-serif text-4xl leading-[0.9] text-SilentKrowd-white md:text-7xl lg:text-8xl">
-              When the city <em className="text-SilentKrowd-gold not-italic">sleeps</em>, we awaken.
+              Elite Sophistication <em className="text-SilentKrowd-gold not-italic">Served</em>, Daily.
             </h2>
           </Container>
         </div>
