@@ -4,7 +4,7 @@ import { MapPin, Phone, Mail, Clock, CheckCircle2 } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { Button } from '@/components/ui/Button'
 import { supabase } from '@/lib/supabase'
-import contactImg from '@/assets/home/outdoor.jpg'
+import contactImg from '@/assets/home/outdoor.webp'
 
 const details = [
   { icon: MapPin, label: 'Address', value: 'Along Aka Avenue Off Jakpa/Refinery Road' },

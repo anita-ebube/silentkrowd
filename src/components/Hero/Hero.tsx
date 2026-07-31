@@ -2,8 +2,7 @@ import { motion, useScroll, useTransform } from 'framer-motion'
 import { useRef } from 'react'
 import { ArrowRight } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
-import heroVideo from '@/assets/hero.mp4'
-import posterImg from '@/assets/home/outdoor.jpg'
+import posterImg from '@/assets/home/destination2.webp'
 
 const reveal = {
   hidden: { y: '110%', opacity: 0 },
@@ -29,14 +28,11 @@ export function Hero() {
           className="hero-orb h-[400px] w-[400px] bg-SilentKrowd-gold opacity-[0.08]"
           style={{ top: '50%', left: '50%', transform: 'translate(-50%,-50%)', animationDelay: '-8s' }}
         />
-        <video
+        <img
+          src={posterImg}
+          alt="SilentKrowd lounge"
+          fetchPriority="high"
           className="absolute inset-0 h-full w-full object-cover brightness-[0.6] contrast-[1.2]"
-          src={heroVideo}
-          autoPlay
-          loop
-          muted
-          playsInline
-          poster={posterImg}
         />
         <div className="absolute inset-0 bg-gradient-to-b from-SilentKrowd-black/60 via-transparent to-SilentKrowd-black" />
       </motion.div>

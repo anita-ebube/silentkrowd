@@ -1,15 +1,15 @@
-import momentImg1 from '@/assets/home/IMG_0804.JPG.jpg'
-import momentImg2 from '@/assets/home/IMG_0803.JPG.jpg'
-import momentImg3 from '@/assets/home/destination2.jpg'
-import momentImg4 from '@/assets/home/destination3.jpg'
-import momentImg5 from '@/assets/home/IMG_3082.jpg'
-import momentImg6 from '@/assets/home/IMG_3083.jpg'
-import momentImg7 from '@/assets/home/IMG_3087.jpg'
+import momentImg1 from '@/assets/home/IMG_0804.JPG.webp'
+import momentImg2 from '@/assets/home/IMG_0803.JPG.webp'
+import momentImg3 from '@/assets/home/destination2.webp'
+import momentImg4 from '@/assets/home/destination3.webp'
+import momentImg5 from '@/assets/home/IMG_3082.webp'
+import momentImg6 from '@/assets/home/IMG_3083.webp'
+import momentImg7 from '@/assets/home/IMG_3087.webp'
 
 export interface Moment {
   id: number
   caption: string
-  img: string
+  img?: string
   width: number
 }
 

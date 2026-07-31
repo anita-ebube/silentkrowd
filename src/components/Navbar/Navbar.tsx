@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Menu, X, ShoppingBag } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { useCart } from '@/context/CartContext'
-import logo from '@/assets/logo.png'
+import logo from '@/assets/logo.webp'
 
 const links = [
   { to: '/', label: 'Home' },

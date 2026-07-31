@@ -1,15 +1,15 @@
-import spaceImg1 from '@/assets/home/IMG_3095.jpg'
-import spaceImg2 from '@/assets/home/IMG_0823.JPG.jpg'
-import spaceImg3 from '@/assets/home/IMG_0818.JPG.jpg'
-import spaceImg4 from '@/assets/home/IMG_0814.JPG.jpg'
-import spaceImg5 from '@/assets/home/IMG_0813.JPG.jpg'
+import spaceImg1 from '@/assets/home/IMG_3095.webp'
+import spaceImg2 from '@/assets/home/IMG_0823.JPG.webp'
+import spaceImg3 from '@/assets/home/IMG_0818.JPG.webp'
+import spaceImg4 from '@/assets/home/IMG_0814.JPG.webp'
+import spaceImg5 from '@/assets/home/IMG_0813.JPG.webp'
 
 export interface Space {
   id: number
   label: string
   title: string
   desc: string
-  img: string
+  img?: string
   features: string[]
 }
 

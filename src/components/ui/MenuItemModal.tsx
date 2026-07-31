@@ -20,11 +20,11 @@ export function MenuItemModal({ item, onClose }: { item: MenuItem | null; onClos
       {item && (
         <div className="grid grid-cols-1 overflow-hidden rounded-sm bg-SilentKrowd-charcoal md:grid-cols-2">
           <div className="relative h-[50vh] md:h-[80vh]">
-            <img
+            {/* <img
               src={item.img}
               alt={item.name}
               className="h-full w-full object-cover brightness-50 contrast-110 saturate-75"
-            />
+            /> */}
           </div>
           <div className="flex flex-col justify-center p-8 md:p-12">
             <span className="mb-2 inline-block border border-SilentKrowd-gold/20 px-3 py-1 text-[0.55rem] uppercase tracking-wider text-SilentKrowd-gold/60">

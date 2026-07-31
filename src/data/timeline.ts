@@ -1,8 +1,8 @@
-import timelineImg1 from '@/assets/home/IMG_0813.JPG.jpg'
-import timelineImg2 from '@/assets/home/IMG_0812.JPG.jpg'
-import timelineImg3 from '@/assets/home/IMG_0811.JPG.jpg'
-import timelineImg4 from '@/assets/home/IMG_0810.JPG.jpg'
-import timelineImg5 from '@/assets/home/IMG_0809.JPG.jpg'
+import timelineImg1 from '@/assets/home/IMG_0813.JPG.webp'
+import timelineImg2 from '@/assets/home/IMG_0812.JPG.webp'
+import timelineImg3 from '@/assets/home/IMG_0811.JPG.webp'
+import timelineImg4 from '@/assets/home/IMG_0810.JPG.webp'
+import timelineImg5 from '@/assets/home/IMG_0809.JPG.webp'
 
 export interface TimelineStop {
   id: number

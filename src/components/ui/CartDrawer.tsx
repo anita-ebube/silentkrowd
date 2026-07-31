@@ -47,11 +47,11 @@ export function CartDrawer() {
               ) : (
                 lines.map((line) => (
                   <div key={line.id} className="mb-5 flex gap-4 border-b border-SilentKrowd-border pb-5 last:border-0">
-                    <img
+                    {/* <img
                       src={line.img}
                       alt=""
                       className="h-16 w-16 flex-shrink-0 rounded-sm object-cover brightness-75"
-                    />
+                    /> */}
                     <div className="min-w-0 flex-1">
                       <h4 className="truncate text-sm font-medium text-SilentKrowd-white">{line.name}</h4>
                       <p className="mt-0.5 text-sm text-SilentKrowd-gold">{formatNaira(line.price)}</p>

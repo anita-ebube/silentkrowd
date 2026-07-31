@@ -11,6 +11,7 @@ export function SpaceModal({ space, onClose }: { space: Space | null; onClose: (
             <img
               src={space.img}
               alt={space.title}
+              loading="lazy"
               className="h-full w-full object-cover brightness-50 contrast-110"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-SilentKrowd-charcoal via-transparent to-transparent" />

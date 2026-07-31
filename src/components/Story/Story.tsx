@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/Container'
 import { ImageReveal } from '@/components/ui/ImageReveal'
-import destination2 from "../../assets/home/destination2.jpg";
+import destination2 from "../../assets/home/destination2.webp";
 const lines = ['A destination', 'for unforgettable', 'nights.']
 
 export function Story() {

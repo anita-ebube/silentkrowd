@@ -1,14 +1,14 @@
 import { motion } from 'framer-motion'
 import { Container } from '@/components/ui/Container'
 import { ImageReveal } from '@/components/ui/ImageReveal'
-import Outdoor from '../../assets/home/outdoor.jpg'
-import Cocktail from '../../assets/home/cocktail2.jpg'
-import destination3 from '../../assets/home/destination3.jpg'
-import collageBig from '../../assets/home/IMG_3095.jpg'
-import collage2 from '../../assets/home/IMG_3087.jpg'
-import collage3 from '../../assets/home/IMG_3083.jpg'
-import collage4 from '../../assets/home/IMG_3082.jpg'
-import collage5 from '../../assets/home/IMG_0823.JPG.jpg'
+import Outdoor from '../../assets/home/outdoor.webp'
+import Cocktail from '../../assets/home/cocktail2.webp'
+import destination3 from '../../assets/home/destination3.webp'
+import collageBig from '../../assets/home/IMG_3095.webp'
+import collage2 from '../../assets/home/IMG_3087.webp'
+import collage3 from '../../assets/home/IMG_3083.webp'
+import collage4 from '../../assets/home/IMG_3082.webp'
+import collage5 from '../../assets/home/IMG_0823.JPG.webp'
 const panels = [
   {
     eyebrow: '01 — Atmosphere',
@@ -82,7 +82,7 @@ export function Atmosphere() {
           src={destination3}
           alt="Nightlife"
           className="absolute inset-0 h-full w-full"
-          // imgClassName="brightness-[0.4] contrast-125 saturate-50"
+          imgClassName="brightness-[0.4] contrast-125 saturate-50"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-SilentKrowd-black/80 via-SilentKrowd-black/40 to-transparent" />
         <div className="absolute inset-0 flex items-center">

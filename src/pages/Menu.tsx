@@ -35,7 +35,7 @@ function getImageKeywords(item: MenuItem) {
 }
 
 function getImageUrl(item: MenuItem) {
-  if (item.img && !item.img.startsWith('/src/assets')) {
+  if (item.img) {
     return item.img
   }
   return `https://loremflickr.com/500/500/${getImageKeywords(item)}?lock=${item.id}`

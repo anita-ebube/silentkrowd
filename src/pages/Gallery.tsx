@@ -13,23 +13,22 @@ import { Container } from '@/components/ui/Container'
 import { useLockBodyScroll } from '@/hooks/useLockBodyScroll'
 import { supabase } from '@/lib/supabase'
 
-import galleryImg1 from '@/assets/home/outdoor.jpg'
-import galleryImg2 from '@/assets/home/IMG_3095.jpg'
-import galleryImg3 from '@/assets/home/IMG_3087.jpg'
-import galleryImg4 from '@/assets/home/IMG_3083.jpg'
-import galleryImg5 from '@/assets/home/IMG_3082.jpg'
-import galleryImg6 from '@/assets/home/IMG_0823.JPG.jpg'
-import galleryImg7 from '@/assets/home/IMG_0818.JPG.jpg'
-import galleryImg8 from '@/assets/home/IMG_0814.JPG.jpg'
-import galleryImg9 from '@/assets/home/IMG_0813.JPG.jpg'
-import galleryImg10 from '@/assets/home/IMG_0812.JPG.jpg'
-import galleryImg11 from '@/assets/home/IMG_0811.JPG.jpg'
-import galleryImg12 from '@/assets/home/IMG_0810.JPG.jpg'
-import galleryImg13 from '@/assets/home/IMG_0809.JPG.jpg'
-import galleryImg14 from '@/assets/home/IMG_0807.JPG.jpg'
-import galleryImg15 from '@/assets/home/IMG_0804.JPG.jpg'
-import galleryImg16 from '@/assets/home/IMG_0803.JPG.jpg'
-import featuredImg from '@/assets/home/cocktail.jpg'
+import galleryImg1 from '@/assets/home/outdoor.webp'
+import galleryImg2 from '@/assets/home/IMG_3095.webp'
+import galleryImg3 from '@/assets/home/IMG_3087.webp'
+import galleryImg4 from '@/assets/home/IMG_3083.webp'
+import galleryImg5 from '@/assets/home/IMG_3082.webp'
+import galleryImg6 from '@/assets/home/IMG_0823.JPG.webp'
+import galleryImg7 from '@/assets/home/IMG_0818.JPG.webp'
+import galleryImg8 from '@/assets/home/IMG_0814.JPG.webp'
+import galleryImg9 from '@/assets/home/IMG_0813.JPG.webp'
+import galleryImg10 from '@/assets/home/IMG_0812.JPG.webp'
+import galleryImg11 from '@/assets/home/IMG_0811.JPG.webp'
+import galleryImg12 from '@/assets/home/IMG_0810.JPG.webp'
+import galleryImg13 from '@/assets/home/IMG_0809.JPG.webp'
+import galleryImg14 from '@/assets/home/IMG_0807.JPG.webp'
+import galleryImg15 from '@/assets/home/IMG_0804.JPG.webp'
+import galleryImg16 from '@/assets/home/IMG_0803.JPG.webp'
 
 type GalleryImage = {
   id: number | string
@@ -55,6 +54,7 @@ const fallbackImages: GalleryImage[] = [
   { id: 15, src: galleryImg15, caption: "Chef's Special" },
   { id: 16, src: galleryImg16, caption: 'Golden Hour' },
 ]
+
 
 
 
@@ -248,10 +248,10 @@ export default function Gallery() {
     if (activeIndex === null) return
     const nextI = (activeIndex + 1) % galleryImages.length
     const prevI = (activeIndex - 1 + galleryImages.length) % galleryImages.length
-      ;[nextI, prevI].forEach((idx) => {
-        const preload = new window.Image()
-        preload.src = galleryImages[idx].src
-      })
+    ;[nextI, prevI].forEach((idx) => {
+      // const preload = new window.Image()
+      // preload.src = galleryImages[idx].src
+    })
   }, [activeIndex])
 
   function handleDragEnd(_e: MouseEvent | TouchEvent | PointerEvent, info: PanInfo) {

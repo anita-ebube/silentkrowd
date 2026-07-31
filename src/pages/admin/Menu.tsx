@@ -296,13 +296,13 @@ export default function AdminMenu() {
                 <tr key={item.id} className="border-b border-SilentKrowd-border/60 transition-colors hover:bg-white/[0.02]">
                   <td className="px-4 py-3">
                     <div className="relative h-12 w-12 overflow-hidden rounded bg-SilentKrowd-charcoal">
-                      {item.image ? (
+                      {/* {item.image ? (
                         <img src={item.image} alt="" className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-SilentKrowd-muted/30">
                           <ImageIcon size={16} />
                         </div>
-                      )}
+                      )} */}
                       <input
                         type="file"
                         accept="image/*"
