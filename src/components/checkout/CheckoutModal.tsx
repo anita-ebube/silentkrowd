@@ -1,4 +1,4 @@
-import { useState, useRef, type FormEvent } from 'react'
+import { useEffect, useState, useRef, type FormEvent } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Modal } from '@/components/ui/Modal'
 import { Button } from '@/components/ui/Button'
@@ -6,6 +6,8 @@ import { useCart } from '@/context/CartContext'
 import { formatNaira } from '@/utils/currency'
 import {
   createOrder,
+  getCachedPublicSettings,
+  getPublicSettings,
   openPaystackPopup,
   verifyPayment,
   type CreateOrderResult,
@@ -21,6 +23,9 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
 
   const idempotencyKey = useRef(crypto.randomUUID())
   const [step, setStep] = useState<Step>('details')
+  const [deliveryFee, setDeliveryFee] = useState<number | null>(
+    () => getCachedPublicSettings()?.delivery_fee ?? null,
+  )
   const [fullName, setFullName] = useState('')
   const [phone, setPhone] = useState('')
   const [email, setEmail] = useState('')
@@ -28,6 +33,20 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
   const [formError, setFormError] = useState<string | null>(null)
   const [pendingOrder, setPendingOrder] = useState<CreateOrderResult | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    getPublicSettings()
+      .then((settings) => {
+        if (!cancelled) setDeliveryFee(settings.delivery_fee)
+      })
+      .catch(() => {
+        if (!cancelled) setDeliveryFee(getCachedPublicSettings()?.delivery_fee ?? null)
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   function resetAndClose() {
     setStep('details')
@@ -94,6 +113,7 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
       )
 
       setPendingOrder(order)
+      setDeliveryFee(order.delivery_fee)
       clearCart()
       const guestEmail = email.trim() || `${phone.trim()}@guest.SilentKrowd-lounge.com`
       await runPaystackAndVerify(order, guestEmail)
@@ -116,7 +136,15 @@ export function CheckoutModal({ open, onClose }: { open: boolean; onClose: () =>
             <h2 className="mb-1 font-serif text-2xl text-SilentKrowd-white">Checkout</h2>
             <p className="mb-6 text-sm text-SilentKrowd-muted">
               Subtotal: <span className="text-SilentKrowd-gold">{formatNaira(subtotal)}</span> ·
-              Delivery fee: <span className="text-SilentKrowd-gold">₦7,000</span>
+              Delivery fee: <span className="text-SilentKrowd-gold">
+                {deliveryFee != null ? formatNaira(deliveryFee) : '…'}
+              </span>
+              {deliveryFee != null && (
+                <>
+                  {' '}· Total:{' '}
+                  <span className="text-SilentKrowd-gold">{formatNaira(subtotal + deliveryFee)}</span>
+                </>
+              )}
             </p>
 
             <form onSubmit={handleSubmit} className="flex flex-col gap-4">

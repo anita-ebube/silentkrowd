@@ -144,7 +144,7 @@ export async function listOrders({
 export async function getOrderDetail(orderId: string): Promise<OrderWithItems> {
   const { data, error } = await supabase
     .from('orders')
-    .select('id, order_number, status, total_amount, created_at, assigned_staff_id, cancelled_reason, notes, order_items(id, name, qty, price, category), customer:customers(id, full_name, phone, email), payment:payments(id, reference, amount, status, method)')
+    .select('id, order_number, status, total_amount, subtotal, delivery_fee, delivery_address, delivery_instructions, assigned_staff_id, cancelled_reason, created_at, order_items(id, name, quantity, unit_price, line_total, category), customer:customers(id, full_name, phone, email), payment:payments(id, reference, amount, status)')
     .eq('id', orderId)
     .single()
 
@@ -579,6 +579,10 @@ export async function updateMenuItemImage(
   id: number,
   file: File,
 ): Promise<string> {
+  if (file.size > 1 * 1024 * 1024) {
+    throw new Error('Image must be under 1 MB.')
+  }
+
   // Delete old image if exists
   const { data: item } = await supabase
     .from('menu_items')

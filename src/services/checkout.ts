@@ -44,6 +44,23 @@ export async function createOrder(
   })
 }
 
+export interface PublicSettings {
+  delivery_fee: number
+  restaurant_name: string
+}
+
+let publicSettingsCache: PublicSettings | null = null
+
+export function getCachedPublicSettings(): PublicSettings | null {
+  return publicSettingsCache
+}
+
+export async function getPublicSettings(): Promise<PublicSettings> {
+  const settings = await callFunction<PublicSettings>('get-settings', {})
+  publicSettingsCache = settings
+  return settings
+}
+
 export interface VerifyPaymentResult {
   status: 'success' | 'failed'
   order?: unknown

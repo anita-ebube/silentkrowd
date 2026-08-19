@@ -31,7 +31,7 @@ export function MenuItemModal({ item, onClose }: { item: MenuItem | null; onClos
               {item.category}
             </span>
             <h2 className="mb-2 font-serif text-3xl text-SilentKrowd-white md:text-4xl">{item.name}</h2>
-            <span className="mb-6 font-serif text-2xl text-SilentKrowd-gold">${item.price}</span>
+            <span className="mb-6 font-serif text-2xl text-SilentKrowd-gold">₦{item.price}</span>
             <div className="mt-auto flex items-center gap-4 pt-6">
               <div className="flex items-center rounded-sm border border-SilentKrowd-border">
                 <button
@@ -49,7 +49,7 @@ export function MenuItemModal({ item, onClose }: { item: MenuItem | null; onClos
                 </button>
               </div>
               <Button variant="filled" className="flex-1 justify-center" onClick={handleAdd}>
-                Add to Order — ${item.price * qty}
+                Add to Order — ₦{item.price * qty}
               </Button>
             </div>
           </div>

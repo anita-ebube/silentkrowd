@@ -116,7 +116,11 @@ export function OrderDetailModal({
     <Modal open={!!orderId} onClose={onClose} className="max-w-2xl">
       <div className="max-h-[85vh] overflow-y-auto bg-SilentKrowd-charcoal p-8">
         {!order ? (
-          <p className="text-SilentKrowd-muted">Loading…</p>
+          error ? (
+            <p className="text-sm text-red-400">{error}</p>
+          ) : (
+            <p className="text-SilentKrowd-muted">Loading…</p>
+          )
         ) : (
           <>
             <div className="mb-6 flex items-start justify-between">

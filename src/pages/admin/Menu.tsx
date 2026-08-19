@@ -109,6 +109,10 @@ export default function AdminMenu() {
       setError('Please select an image file.')
       return
     }
+    if (file.size > 1 * 1024 * 1024) {
+      setError('Image must be under 1 MB.')
+      return
+    }
     setUploadingImgId(id)
     setError(null)
     try {
@@ -296,19 +300,30 @@ export default function AdminMenu() {
                 <tr key={item.id} className="border-b border-SilentKrowd-border/60 transition-colors hover:bg-white/[0.02]">
                   <td className="px-4 py-3">
                     <div className="relative h-12 w-12 overflow-hidden rounded bg-SilentKrowd-charcoal">
-                      {/* {item.image ? (
-                        <img src={item.image} alt="" className="h-full w-full object-cover" />
+                      {item.image ? (
+                        <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                       ) : (
                         <div className="flex h-full w-full items-center justify-center text-SilentKrowd-muted/30">
                           <ImageIcon size={16} />
                         </div>
-                      )} */}
+                      )}
                       <input
                         type="file"
                         accept="image/*"
                         onChange={(e) => {
                           const f = e.target.files?.[0]
-                          if (f) handleImageUpload(item.id, f)
+                          if (!f) return
+                          if (!f.type.startsWith('image/')) {
+                            setError('Please select an image file.')
+                            e.target.value = ''
+                            return
+                          }
+                          if (f.size > 1 * 1024 * 1024) {
+                            setError('Image must be under 1 MB.')
+                            e.target.value = ''
+                            return
+                          }
+                          handleImageUpload(item.id, f)
                         }}
                         ref={(el) => { if (el) imgInputRefs.current.set(item.id, el) }}
                         className="hidden"
