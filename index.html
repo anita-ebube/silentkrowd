@@ -10,7 +10,11 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=Inter:wght@300;400;500;600&display=optional" rel="stylesheet">
-    <script src="https://js.paystack.co/v1/inline.js" integrity="sha384-QrP0u+4fz1ULjkyrXuG/dik/AMsB81GAIHKFg628v7P2r5s2kN2CiCeXlwd2uK+i" crossorigin="anonymous"></script>
+    <!-- NOTE: no integrity/crossorigin attributes here — Paystack's CDN does not
+         send Access-Control-Allow-Origin, which makes the browser block the script
+         in CORS mode (SRI requires CORS). The script is still locked down by CSP
+         (script-src https://js.paystack.co). -->
+    <script src="https://js.paystack.co/v1/inline.js"></script>
   </head>
   <body>
     <div id="root"></div>
