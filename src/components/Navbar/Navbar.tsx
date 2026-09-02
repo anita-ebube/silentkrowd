@@ -78,13 +78,27 @@ export function Navbar() {
             </button>
           </div>
 
-          <button
-            aria-label="Open menu"
-            className="text-SilentKrowd-white md:hidden"
-            onClick={() => setMobileOpen(true)}
-          >
-            <Menu size={26} />
-          </button>
+          <div className="flex items-center gap-4 md:hidden">
+            <button
+              aria-label="Open cart"
+              onClick={toggleCart}
+              className="relative p-1 text-SilentKrowd-white transition-colors hover:text-SilentKrowd-gold"
+            >
+              <ShoppingBag size={22} />
+              {totalCount > 0 && (
+                <span className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-SilentKrowd-gold text-[0.55rem] font-semibold text-SilentKrowd-black">
+                  {totalCount}
+                </span>
+              )}
+            </button>
+            <button
+              aria-label="Open menu"
+              className="text-SilentKrowd-white"
+              onClick={() => setMobileOpen(true)}
+            >
+              <Menu size={26} />
+            </button>
+          </div>
         </Container>
       </nav>
 
@@ -120,6 +134,23 @@ export function Navbar() {
                   </NavLink>
                 </motion.div>
               ))}
+              <motion.div
+                initial={{ y: 20, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                transition={{ delay: links.length * 0.06 }}
+              >
+                <button
+                  onClick={() => {
+                    setMobileOpen(false)
+                    toggleCart()
+                  }}
+                  className="flex items-center gap-3 font-serif text-3xl text-SilentKrowd-white transition-colors hover:text-SilentKrowd-gold"
+                >
+                  <ShoppingBag size={24} />
+                  Cart
+                  {totalCount > 0 && <span className="text-SilentKrowd-gold">({totalCount})</span>}
+                </button>
+              </motion.div>
             </div>
           </motion.div>
         )}
