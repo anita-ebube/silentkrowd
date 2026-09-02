@@ -94,7 +94,10 @@ export function CartDrawer() {
                 <Button
                   variant="filled"
                   className="w-full justify-center"
-                  onClick={() => setCheckoutOpen(true)}
+                  onClick={() => {
+                    closeCart()
+                    setCheckoutOpen(true)
+                  }}
                 >
                   Place Order
                 </Button>
