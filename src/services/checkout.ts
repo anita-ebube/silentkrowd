@@ -1,6 +1,6 @@
-import { supabase } from '@/lib/supabase'
 import { callFunction } from '@/services/functions'
 import { toKobo } from '@/utils/currency'
+import type { TrackedOrder } from '@/types/database'
 
 export interface CheckoutDetails {
   fullName: string
@@ -107,12 +107,14 @@ export function openPaystackPopup(options: {
 }
 
 export async function trackOrder(orderNumber: string, phone: string) {
-  const { data, error } = await supabase
-    .rpc('track_order', { p_order_number: orderNumber, p_phone: phone })
-    .maybeSingle()
+  const result = await callFunction<{ found: boolean; order?: TrackedOrder }>('track-order', {
+    order_number: orderNumber,
+    phone,
+  })
 
-  if (error) throw new Error(error.message)
-  if (!data) throw new Error('No order found with that order number and phone number.')
+  if (!result.found || !result.order) {
+    throw new Error('No order found with that order number and phone number.')
+  }
 
-  return data
+  return result.order
 }

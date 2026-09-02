@@ -19,30 +19,62 @@ function serviceRoleClient(): SupabaseClient {
   )
 }
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers':
-    'authorization, x-client-info, apikey, content-type',
-  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+// ---- CORS (mirrors _shared/cors.ts — keep in sync) -----------------------
+
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://silentkrowd.com',
+  'https://www.silentkrowd.com',
+]
+
+function getAllowedOrigins(): string[] {
+  const env = Deno.env.get('CORS_ALLOWED_ORIGINS')
+  if (env) {
+    const list = env
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (list.length > 0) return list
+  }
+  return DEFAULT_ALLOWED_ORIGINS
+}
+
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
+  if (origin && getAllowedOrigins().includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+    headers['Vary'] = 'Origin'
+  }
+  return headers
 }
 
 function handleOptions(req: Request): Response | null {
-  if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders })
+  if (req.method !== 'OPTIONS') return null
+  const headers = buildCorsHeaders(req)
+  if (!headers['Access-Control-Allow-Origin']) {
+    return new Response('Origin not allowed', { status: 403 })
   }
-  return null
+  return new Response('ok', { headers })
 }
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' },
   })
 }
 
-function errorResponse(message: string, status = 400): Response {
-  return jsonResponse({ error: message }, status)
+function errorResponse(req: Request, message: string, status = 400): Response {
+  return jsonResponse(req, { error: message }, status)
 }
+
+// ---------------------------------------------------------------------------
 
 const PUBLIC_KEYS = ['delivery_fee', 'restaurant_name']
 
@@ -51,7 +83,7 @@ Deno.serve(async (req) => {
   if (preflight) return preflight
 
   if (req.method !== 'GET' && req.method !== 'POST') {
-    return errorResponse('Method not allowed', 405)
+    return errorResponse(req, 'Method not allowed', 405)
   }
 
   const db = serviceRoleClient()
@@ -63,14 +95,14 @@ Deno.serve(async (req) => {
 
   if (error) {
     console.error('get-settings failed', error)
-    return errorResponse('Could not load settings.', 500)
+    return errorResponse(req, 'Could not load settings.', 500)
   }
 
   const settings = Object.fromEntries((data ?? []).map((row) => [row.key, row.value]))
 
   const rawFee = Number(settings.delivery_fee)
 
-  return jsonResponse({
+  return jsonResponse(req, {
     delivery_fee: Number.isFinite(rawFee) ? rawFee : 7000,
     restaurant_name:
       typeof settings.restaurant_name === 'string'

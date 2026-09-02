@@ -7,20 +7,93 @@
 // frontend needs to open Paystack Inline.
 //
 // Pricing is looked up from the menu_items table (server-side source of truth)
-// rather than trusting client-sent unit_price values. If the table hasn't been
-// created yet (migration 0012 not applied), falls back gracefully to trusting
-// the client — log a warning so the operator knows the canonical table is
-// missing.
+// and NEVER trusted from client-sent unit_price values. If the menu table is
+// unavailable, order creation fails closed rather than falling back to
+// client-supplied prices.
+//
+// NOTE: Helpers from _shared are inlined here on purpose so this file is
+// self-contained and can be deployed from the Supabase Dashboard (which only
+// uploads this single file and can't resolve ../_shared imports).
 
-import { serviceRoleClient } from '../_shared/auth.ts'
-import { corsHeaders, errorResponse, handleOptions, jsonResponse } from '../_shared/cors.ts'
+import { createClient, type SupabaseClient } from 'jsr:@supabase/supabase-js@2'
+
+// ---------------------------------------------------------------------------
+// Service-role client (mirror _shared/auth.ts — keep in sync)
+// ---------------------------------------------------------------------------
+
+function serviceRoleClient(): SupabaseClient {
+  return createClient(
+    Deno.env.get('SUPABASE_URL') ?? '',
+    Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+}
+
+// ---------------------------------------------------------------------------
+// CORS helpers (mirror _shared/cors.ts — keep in sync)
+// ---------------------------------------------------------------------------
+
+const DEFAULT_ALLOWED_ORIGINS = [
+  'http://localhost:5173',
+  'http://localhost:4173',
+  'https://silentkrowd.com',
+  'https://www.silentkrowd.com',
+]
+
+function getAllowedOrigins(): string[] {
+  const env = Deno.env.get('CORS_ALLOWED_ORIGINS')
+  if (env) {
+    const list = env
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+    if (list.length > 0) return list
+  }
+  return DEFAULT_ALLOWED_ORIGINS
+}
+
+function buildCorsHeaders(req: Request): Record<string, string> {
+  const origin = req.headers.get('Origin')
+  const headers: Record<string, string> = {
+    'Access-Control-Allow-Headers':
+      'authorization, x-client-info, apikey, content-type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  }
+  if (origin && getAllowedOrigins().includes(origin)) {
+    headers['Access-Control-Allow-Origin'] = origin
+    headers['Vary'] = 'Origin'
+  }
+  return headers
+}
+
+function handleOptions(req: Request): Response | null {
+  if (req.method !== 'OPTIONS') return null
+  const headers = buildCorsHeaders(req)
+  if (!headers['Access-Control-Allow-Origin']) {
+    return new Response('Origin not allowed', { status: 403 })
+  }
+  return new Response('ok', { headers })
+}
+
+function jsonResponse(req: Request, body: unknown, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...buildCorsHeaders(req), 'Content-Type': 'application/json' },
+  })
+}
+
+function errorResponse(req: Request, message: string, status = 400): Response {
+  return jsonResponse(req, { error: message }, status)
+}
+
+// ---------------------------------------------------------------------------
 
 interface ClientItem {
   menu_item_id: number
   quantity: number
-  unit_price?: number  // legacy — only used when menu_items table is absent
-  name?: string        // legacy
-  category?: string    // legacy
+  unit_price?: number  // ignored — price always resolved server-side
+  name?: string        // ignored
+  category?: string    // ignored
 }
 
 interface CheckoutPayload {
@@ -30,7 +103,7 @@ interface CheckoutPayload {
   delivery_address: string
   delivery_instructions?: string
   idempotency_key?: string
-  items: ClientItem
+  items: ClientItem[]
 }
 
 interface ResolvedItem {
@@ -42,36 +115,48 @@ interface ResolvedItem {
 }
 
 const PHONE_RE = /^\+?[0-9]{7,15}$/
+const MAX_LINE_ITEMS = 30
+const MAX_QUANTITY = 99
 
 Deno.serve(async (req) => {
   const preflight = handleOptions(req)
   if (preflight) return preflight
 
-  if (req.method !== 'POST') return errorResponse('Method not allowed', 405)
+  if (req.method !== 'POST') return errorResponse(req, 'Method not allowed', 405)
 
   let payload: CheckoutPayload
   try {
     payload = await req.json()
   } catch {
-    return errorResponse('Invalid JSON body')
+    return errorResponse(req, 'Invalid JSON body')
   }
 
   const { full_name, phone, email, delivery_address, delivery_instructions, idempotency_key, items } =
     payload
 
   // ---- validation -----------------------------------------------------
-  if (!full_name?.trim()) return errorResponse('Full name is required.')
-  if (!phone?.trim() || !PHONE_RE.test(phone.trim()))
-    return errorResponse('A valid phone number is required.')
-  if (!delivery_address?.trim()) return errorResponse('Delivery address is required.')
+  if (typeof full_name !== 'string' || !full_name.trim() || full_name.trim().length > 120)
+    return errorResponse(req, 'A valid full name is required.')
+  if (typeof phone !== 'string' || !phone.trim() || !PHONE_RE.test(phone.trim()))
+    return errorResponse(req, 'A valid phone number is required.')
+  if (typeof delivery_address !== 'string' || !delivery_address.trim() || delivery_address.trim().length > 500)
+    return errorResponse(req, 'A valid delivery address is required.')
+  if (delivery_instructions != null && (typeof delivery_instructions !== 'string' || delivery_instructions.length > 1000))
+    return errorResponse(req, 'Delivery instructions are too long.')
+  if (email != null && (typeof email !== 'string' || email.length > 254 || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)))
+    return errorResponse(req, 'A valid email address is required.')
   if (!Array.isArray(items) || items.length === 0)
-    return errorResponse('Cart is empty.')
+    return errorResponse(req, 'Cart is empty.')
+  if (items.length > MAX_LINE_ITEMS)
+    return errorResponse(req, `Cart cannot contain more than ${MAX_LINE_ITEMS} items.`)
 
   for (const item of items) {
-    if (!item.menu_item_id || !item.quantity) {
-      return errorResponse('One or more cart items is malformed.')
+    if (!item.menu_item_id || !Number.isInteger(item.menu_item_id)) {
+      return errorResponse(req, 'One or more cart items is malformed.')
     }
-    if (item.quantity <= 0) return errorResponse('Item quantity must be positive.')
+    if (!Number.isInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_QUANTITY) {
+      return errorResponse(req, `Item quantity must be a whole number between 1 and ${MAX_QUANTITY}.`)
+    }
   }
 
   const db = serviceRoleClient()
@@ -91,7 +176,7 @@ Deno.serve(async (req) => {
         .eq('order_id', existingOrder.id)
         .maybeSingle()
 
-      return jsonResponse({
+      return jsonResponse(req, {
         order_id: existingOrder.id,
         order_number: existingOrder.order_number,
         subtotal: existingOrder.subtotal,
@@ -103,56 +188,37 @@ Deno.serve(async (req) => {
     }
   }
 
-  // ---- resolve items (try DB lookup first, fall back to client prices) --
-  let resolvedItems: ResolvedItem[]
-
+  // ---- resolve items server-side (fail closed) --------------------------
   const { data: menuRows, error: menuError } = await db
     .from('menu_items')
     .select('id, name, category, price')
+    .eq('active', true)
     .in('id', [...new Set(items.map((i) => i.menu_item_id))])
 
-  if (menuError) {
-    console.warn('menu_items table not available — falling back to client-sent prices.', menuError.message)
+  if (menuError || !menuRows || menuRows.length === 0) {
+    // Never trust client-sent prices — refuse the order instead.
+    console.error('menu_items unavailable — refusing order creation.', menuError?.message)
+    return errorResponse(req, 'Menu data is unavailable. Please try again later.', 503)
   }
 
-  if (menuRows && menuRows.length > 0 && !menuError) {
-    // ---- server-side price lookup (preferred) ---------------------------
-    const priceMap = new Map(menuRows.map((m) => [m.id, m]))
+  const priceMap = new Map(menuRows.map((m) => [m.id, m]))
 
-    // Validate every item is in the table
-    for (const item of items) {
-      const menuItem = priceMap.get(item.menu_item_id)
-      if (!menuItem) return errorResponse(`Menu item ${item.menu_item_id} not found.`)
-      if (Number(menuItem.price) <= 0) return errorResponse(`${menuItem.name} cannot be ordered online. Please ask server for price.`)
-    }
+  for (const item of items) {
+    const menuItem = priceMap.get(item.menu_item_id)
+    if (!menuItem) return errorResponse(req, `Menu item ${item.menu_item_id} is not available for online ordering.`)
+    if (Number(menuItem.price) <= 0) return errorResponse(req, `${menuItem.name} cannot be ordered online. Please ask server for price.`)
+  }
 
-    resolvedItems = items.map((item) => {
-      const m = priceMap.get(item.menu_item_id)!
-      return {
-        menu_item_id: item.menu_item_id,
-        name: m.name,
-        category: m.category,
-        unit_price: Number(m.price),
-        quantity: item.quantity,
-      }
-    })
-  } else {
-    // ---- fallback: trust client (legacy mode — migration not yet applied)
-    console.warn('create-order: using client-sent prices because menu_items table is missing or empty.')
-    for (const item of items) {
-      if (!item.unit_price || item.unit_price <= 0) {
-        return errorResponse(`Item ${item.menu_item_id} has no valid price.`)
-      }
-    }
-
-    resolvedItems = items.map((item) => ({
+  const resolvedItems: ResolvedItem[] = items.map((item) => {
+    const m = priceMap.get(item.menu_item_id)!
+    return {
       menu_item_id: item.menu_item_id,
-      name: item.name || `Item ${item.menu_item_id}`,
-      category: item.category || 'main_dishes',
-      unit_price: item.unit_price!,
+      name: m.name,
+      category: m.category,
+      unit_price: Number(m.price),
       quantity: item.quantity,
-    }))
-  }
+    }
+  })
 
   // ---- pricing ----------------------------------------------------------
   const subtotal = resolvedItems.reduce((sum, i) => sum + i.unit_price * i.quantity, 0)
@@ -173,14 +239,14 @@ Deno.serve(async (req) => {
 
   if (customerError || !customer) {
     console.error('upsert_customer failed', customerError)
-    return errorResponse('Could not save customer details.', 500)
+    return errorResponse(req, 'Could not save customer details.', 500)
   }
 
   // ---- order number -------------------------------------------------------
   const { data: orderNumber, error: orderNumberError } = await db.rpc('generate_order_number')
   if (orderNumberError || !orderNumber) {
     console.error('generate_order_number failed', orderNumberError)
-    return errorResponse('Could not generate order number.', 500)
+    return errorResponse(req, 'Could not generate order number.', 500)
   }
 
   // ---- create order ---------------------------------------------------
@@ -203,7 +269,7 @@ Deno.serve(async (req) => {
 
   if (orderError || !order) {
     console.error('order insert failed', orderError)
-    return errorResponse('Could not create order.', 500)
+    return errorResponse(req, 'Could not create order.', 500)
   }
 
   // ---- order items ------------------------------------------------------
@@ -222,7 +288,7 @@ Deno.serve(async (req) => {
   if (itemsError) {
     console.error('order_items insert failed', itemsError)
     await db.from('orders').delete().eq('id', order.id)
-    return errorResponse('Could not save cart items.', 500)
+    return errorResponse(req, 'Could not save cart items.', 500)
   }
 
   // ---- pending payment row ----------------------------------------------
@@ -237,10 +303,10 @@ Deno.serve(async (req) => {
 
   if (paymentError) {
     console.error('payment insert failed', paymentError)
-    return errorResponse('Could not initialize payment.', 500)
+    return errorResponse(req, 'Could not initialize payment.', 500)
   }
 
-  return jsonResponse({
+  return jsonResponse(req, {
     order_id: order.id,
     order_number: order.order_number,
     subtotal,

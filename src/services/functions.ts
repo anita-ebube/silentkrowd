@@ -20,7 +20,7 @@ export class FunctionCallError extends Error {
 
 export async function callFunction<TResponse = unknown>(
   name: string,
-  body: Record<string, unknown>,
+  body: Record<string, unknown> | FormData,
 ): Promise<TResponse> {
   const { data, error } = await supabase.functions.invoke(name, { body })
 

@@ -13,6 +13,26 @@ import type {
 } from '@/types/database'
 
 // ---------------------------------------------------------------------------
+// Image upload / deletion — always through the manage-upload Edge Function so
+// files are validated server-side (MIME magic bytes, size cap, random UUID
+// names) and every action is audit-logged. Never upload directly to storage
+// from the client.
+// ---------------------------------------------------------------------------
+
+export async function uploadImage(bucket: 'menu-images' | 'gallery-images', file: File): Promise<string> {
+  const form = new FormData()
+  form.append('bucket', bucket)
+  form.append('file', file)
+
+  const result = await callFunction<{ path: string; url: string }>('manage-upload', form)
+  return result.url
+}
+
+export async function deleteImage(bucket: 'menu-images' | 'gallery-images', url: string): Promise<void> {
+  await callFunction('manage-upload', { action: 'delete', bucket, url })
+}
+
+// ---------------------------------------------------------------------------
 // Dashboard
 // ---------------------------------------------------------------------------
 
@@ -259,7 +279,7 @@ export async function manageStaff(
 export async function getStaffActivity(staffId: string, limit = 20): Promise<StaffActivityLog[]> {
   const { data, error } = await supabase
     .from('staff_activity_logs')
-    .select('id, action, target_table, target_id, performed_by, details, created_at')
+    .select('id, action, target_table, target_id, actor_id, metadata, created_at')
     .eq('target_table', 'profiles')
     .eq('target_id', staffId)
     .order('created_at', { ascending: false })
@@ -391,19 +411,7 @@ export async function listGalleryImages(): Promise<GalleryImage[]> {
 }
 
 export async function uploadGalleryImage(file: File): Promise<GalleryImage> {
-  const fileExt = file.name.split('.').pop() ?? 'jpg'
-  const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
-  const filePath = `gallery/${fileName}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('gallery-images')
-    .upload(filePath, file, { upsert: false })
-
-  if (uploadError) throw new Error(uploadError.message)
-
-  const { data: urlData } = supabase.storage
-    .from('gallery-images')
-    .getPublicUrl(filePath)
+  const url = await uploadImage('gallery-images', file)
 
   // Get current max sort_order
   const { data: maxRow } = await supabase
@@ -417,7 +425,7 @@ export async function uploadGalleryImage(file: File): Promise<GalleryImage> {
 
   const { data, error } = await supabase
     .from('gallery_images')
-    .insert({ src: urlData.publicUrl, sort_order: nextOrder })
+    .insert({ src: url, sort_order: nextOrder })
     .select('id, src, sort_order, created_at, updated_at')
     .single()
 
@@ -438,7 +446,7 @@ export async function updateGalleryImage(
 }
 
 export async function deleteGalleryImage(id: string): Promise<void> {
-  // Get the image first to find the storage path
+  // Get the image first to find the storage URL
   const { data: img, error: fetchError } = await supabase
     .from('gallery_images')
     .select('src')
@@ -447,11 +455,8 @@ export async function deleteGalleryImage(id: string): Promise<void> {
 
   if (fetchError) throw new Error(fetchError.message)
 
-  // Delete from storage
-  const urlParts = img.src.split('/')
-  const storagePath = urlParts.slice(urlParts.indexOf('gallery')).join('/')
-
-  await supabase.storage.from('gallery-images').remove([storagePath])
+  // Delete from storage (path resolved + audited server-side by manage-upload)
+  await deleteImage('gallery-images', img.src)
 
   // Delete from table
   const { error } = await supabase.from('gallery_images').delete().eq('id', id)
@@ -507,20 +512,7 @@ export async function createMenuItem(
   let image: string | null = null
 
   if (file) {
-    const fileExt = file.name.split('.').pop() ?? 'jpg'
-    const fileName = `menu/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
-
-    const { error: uploadError } = await supabase.storage
-      .from('menu-images')
-      .upload(fileName, file, { upsert: false })
-
-    if (uploadError) throw new Error(uploadError.message)
-
-    const { data: urlData } = supabase.storage
-      .from('menu-images')
-      .getPublicUrl(fileName)
-
-    image = urlData.publicUrl
+    image = await uploadImage('menu-images', file)
   }
 
   // Get next id
@@ -564,11 +556,9 @@ export async function deleteMenuItem(id: number): Promise<void> {
 
   if (fetchError) throw new Error(fetchError.message)
 
-  // Delete from storage if image exists
+  // Delete from storage if image exists (path resolved + audited server-side)
   if (item.image) {
-    const urlParts = item.image.split('/')
-    const storagePath = urlParts.slice(urlParts.indexOf('menu')).join('/')
-    await supabase.storage.from('menu-images').remove([storagePath])
+    await deleteImage('menu-images', item.image)
   }
 
   const { error } = await supabase.from('menu_items').delete().eq('id', id)
@@ -591,25 +581,10 @@ export async function updateMenuItemImage(
     .single()
 
   if (item?.image) {
-    const urlParts = item.image.split('/')
-    const storagePath = urlParts.slice(urlParts.indexOf('menu')).join('/')
-    await supabase.storage.from('menu-images').remove([storagePath])
+    await deleteImage('menu-images', item.image)
   }
 
-  const fileExt = file.name.split('.').pop() ?? 'jpg'
-  const fileName = `menu/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${fileExt}`
-
-  const { error: uploadError } = await supabase.storage
-    .from('menu-images')
-    .upload(fileName, file, { upsert: false })
-
-  if (uploadError) throw new Error(uploadError.message)
-
-  const { data: urlData } = supabase.storage
-    .from('menu-images')
-    .getPublicUrl(fileName)
-
-  const imageUrl = urlData.publicUrl
+  const imageUrl = await uploadImage('menu-images', file)
 
   const { error } = await supabase
     .from('menu_items')
