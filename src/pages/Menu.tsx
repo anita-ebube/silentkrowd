@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, Plus, Heart, SearchX } from 'lucide-react'
 import { Container } from '@/components/ui/Container'
 import { MenuItemModal } from '@/components/ui/MenuItemModal'
-import { menuData, categories, type MenuCategory, type MenuItem } from '@/data/menu'
+import { categories, type MenuCategory, type MenuItem } from '@/data/menu'
 import { useCart } from '@/context/CartContext'
 import { supabase } from '@/lib/supabase'
 import { cn } from '@/utils/cn'
@@ -204,7 +204,7 @@ export default function Menu() {
     loadMenu()
   }, [])
 
-  const activeData = remoteItems ?? menuData
+  const activeData = remoteItems ?? []
 
   const items = useMemo(() => {
     const q = deferredSearch.toLowerCase()
