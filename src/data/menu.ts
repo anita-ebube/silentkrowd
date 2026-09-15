@@ -1,6 +1,6 @@
 import { getAssetImage } from './images'
 
-export type MenuCategory = 'starters' | 'main_dishes' | 'proteins' | 'drinks'
+export type MenuCategory = 'starters' | 'main_dishes' | 'proteins' | 'drinks' | 'pastries'
 
 export interface MenuItem {
   id: number
@@ -24,4 +24,5 @@ export const categories: { label: string; value: MenuCategory }[] = [
   { label: 'Main Dishes', value: 'main_dishes' },
   { label: 'Proteins', value: 'proteins' },
   { label: 'Drinks', value: 'drinks' },
+  { label: 'Pastries', value: 'pastries' },
 ]

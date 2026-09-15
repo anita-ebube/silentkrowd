@@ -8,7 +8,7 @@
 export type AppRole = 'admin' | 'staff'
 export type StaffStatus = 'active' | 'suspended'
 
-export type MenuCategory = 'starters' | 'main_dishes' | 'proteins' | 'drinks'
+export type MenuCategory = 'starters' | 'main_dishes' | 'proteins' | 'drinks' | 'pastries'
 
 export type OrderStatus =
   | 'pending_payment'

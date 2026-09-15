@@ -15,6 +15,7 @@ const CATEGORY_FALLBACK: Record<MenuCategory, string> = {
   main_dishes: 'gourmet,plate',
   proteins: 'grilled,meat',
   drinks: 'cocktail,drink',
+  pastries: 'pastry,croissant',
 }
 
 const KEYWORD_BANK = [
